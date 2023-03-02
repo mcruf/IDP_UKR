@@ -1,0 +1,17 @@
+Cloud coverage relates to the percentage of cloud cover for the given Image tile.
+
+Maxar provides cloud coverage only for the entire image that is downloaded.
+However, we need the cloud coverage relative to the AOI, and more specifically,
+For the image area covered of the AOI.
+
+This was achieved by accessing the information from the API call, via the script
+imagery_cloud_cover_loop.py
+
+The script provided 2 output files:
+- cloud_img_results.csv
+- fail_data_log.csv
+
+The first file provides the results for each individual image.
+The second file provides information for the images for which cloud coverage could not be computed.
+
+If the script returns any log files, please check more carefully the reason for why the computation failed.
