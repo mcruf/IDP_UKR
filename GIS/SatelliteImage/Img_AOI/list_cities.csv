@@ -1,0 +1,62 @@
+Oblast,Raion,City,Selection_reason,Collector
+Cherkasy,Cherkaska,Cherkasy,Urban area 1,Marie
+Cherkasy,Smilianskyi,Smila,Urban area 2,Marie
+Chernihiv,Chernihivska,Chernihiv,Urban area 1,Marie
+Chernihiv,Novhorod-Siverskyi,Hremiach,Border checkpoints,Marie
+Chernihiv,Nizhynska,Nizhyn,Urban area 2,Marie
+Chernivtsi,Chernivetska,Chernivtsi,Urban area 1,Marie
+Chernivtsi,Novoselitskyi,Mamalyha,Border checkpoints,Marie
+Chernivtsi,Hlybotskyi,Porubne,Border checkpoints / Urban area 2,Marie
+Chernivtsi,Storozhynetskyi,Storozhynets,Urban area 3,Marie
+Dnipropetrovsk,Dnipropetrovska,Dnipro,Urban area 1,Masoomali
+Dnipropetrovsk,KryvyiRig,KryvyiRih,Urban area 2,Masoomali
+Donetsk,Donetska,Donetsk,Urban area 1,Masoomali
+Donetsk,Kramatorska,Kramatorsk,War news,Masoomali
+Donetsk,Mariupolska,Mariupol,War news / Urban area 2,Masoomali
+Ivano-Frankivsk,Ivano-Frankivska,Ivano-Frankivsk,Urban area 1,Marie
+Ivano-Frankivsk,Kolomyiskyi,Kolomyiska,Urban area 2,Marie
+Kharkiv,Kharkivska,Kharkiv,War news / Urban area 1,Masoomali
+Kharkiv,Vovchanskyi,Pletenivka,Border checkpoints,Marie
+Kharkiv,Kharkivskyi,Merefa,Urban area 2,Marie
+Kherson,Khersonska,Kherson,War news / Urban area 1,Masoomali
+Kherson,Tsiurupynskyi,Velyki Kopani,Urban area 2,Marie
+Khmelnytskyy,Khmelnytska,Khmelnytskyi,Urban area 1,Marie
+Khmelnytskyy,Kamianets-Podilska,Kamyanets-Podilskyi,Urban area 2,Marie
+Kiev,Bilotserkivska,Bila Tserkva,Urban area 2,Marie
+Kiev,Kiev city,Kyiv city,War news / Urban area 1,Masoomali
+Kirovohrad,Kirovohradskyi,Kropyvnytskyi,Urban area,Marie
+Kirovohrad,Oleksandriiskyi,Oleksandriya,Urban area 2,Marie
+Luhansk,Luhanska,Luhansk,Urban area 1,Marie
+Luhansk,Milovskyi,Milove,Border checkpoints,Marie
+Luhansk,Perevalskyi,Alchevsk,Urban area 2,Marie
+Lviv,Lvivska,Lviv,War news / Urban area 1,Masoomali
+Lviv,Mostyskyi,Shehyni,Border checkpoints,Marie
+Lviv,Zhovkivskyi,Rava-Ruska,Border checkpoints,Marie
+Lviv,Drohobytska,Drohobych,Urban area 2,Marie
+Mykolayiv,Mykolaivska,Mykolaiv,War news / Urban area 1,Masoomali
+Mykolayiv,Pervomaiska,Pervomaisk,Urban area 2,Marie
+Odessa,Odeska,Odessa,War news / Urban area 1,Masoomali
+Odessa,Bilhorod-Dnistrovskyi,Udobne,Border checkpoints,Marie
+Odessa,Rozdilniaskyi,Kuchurhan,Border checkpoints,Marie
+Odessa,Reniiskyi,Reni,Border checkpoints,Marie
+Odessa,Ovidiopolskyi,Velykodolynske,Urban area 2,Marie
+Poltava,Poltavska,Poltava,Urban area 1,Marie
+Poltava,Kremenchutska,Kremenchuk,Urban area 2,Marie
+Rivne,Rivnenska,Rivne,Urban area 1,Marie
+Rivne,Sarnenskyi,Sarny,Urban area 3,Marie
+Sumy,Sumska,Sumy,Urban area 1,Marie
+Sumy,Hlukhivskyi,Katerynivka,Border checkpoints,Marie
+Sumy,Konotopska,Konotop,Urban area 2,Marie
+Ternopil,Ternopilska,Ternopil,Urban area 1,Marie
+Ternopil,Chortkivskyi,Chortkiv,Urban area 2,Marie
+Vinnytsia,Vinnytska,Vinnytsia,Urban area 1,Marie
+Vinnytsia,Koziatynskyi,Kozyatyn,Urban area 3,Marie
+Volyn,Lutska,Lutsk,Urban area 1,Marie
+Volyn,Kovelska,Kovel,Urban area 2,Marie
+Zakarpattia,Uzhhorodska,Uzhhorod,Urban area 1,Marie
+Zakarpattia,Berehivskyi,Berehove,Border checkpoints,Marie
+Zakarpattia,Tiachivskyi,Solotvino,Border checkpoints / Urban area 2,Marie
+Zaporizhzhya,Zaporizka,Zaporizhzhia,War news / Urban area 1,Masoomali
+Zaporizhzhya,Melitopolska,Melitopol,Urban area 2,Marie
+Zhytomyr,Zhytomyrska,Zhytomyr,Urban area 1,Marie
+Zhytomyr,Berdychivska,Berdychiv,Urban area 2,Marie
