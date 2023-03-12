@@ -305,7 +305,7 @@ ukr_map_final <- ggdraw() +
                  draw_plot(ukr_map) +
                 draw_plot(europe_map, 
                           x = 0.792, # The distance along a (0,1) x-axis to draw the left edge of the plot
-                          y = 0.75,  # The distance along a (0,1) y-axis to draw the bottom edge of the plot
+                          y = 0.772,  # The distance along a (0,1) y-axis to draw the bottom edge of the plot
                           width = .2,  # The width and height of the plot expressed as proportion of the entire ggdraw object
                           height = .2)
 
@@ -314,5 +314,5 @@ ukr_map_final <- ggdraw() +
 
 
 ## Save the output
-OUTFILE <- ('/Users/marie-christinerufener/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/Manuscript/Figures/map.png')
-ggsave(filename=OUTFILE, plot = ukr_map_final, dpi = 400) #png,jpeg,pdf,....
+OUTFILE <- ('/Users/marie-christinerufener/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/Manuscript/Figures/map.jpg')
+ggsave(filename=OUTFILE, plot = ukr_map_final, dpi = 300, bg="white") #png,jpeg,pdf,....
