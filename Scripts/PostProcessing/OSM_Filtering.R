@@ -588,11 +588,10 @@ for(city in 1:length(cities)){
   #### Remove b_s1/s2 images (older image version not in use anymore)
   idxbs <- grep("b_s", ff)
   
-  idxrm <- c(idxbs)
-  
-  ff <- ff[-idxrm]
-  f <- f[-idxrm]
-  
+  if(length(idxbs) != 0){
+    ff <- ff[-idxbs]
+    f <- f[-idxbs]
+  }
   
   
   ## Read all files and retrieve city & date information
