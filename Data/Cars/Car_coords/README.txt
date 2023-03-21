@@ -14,4 +14,6 @@ the folder:
 
 Data/Cars/Car_aggregated 
 
-
+# th_015 - outputs for 0.15 confidence threshold with multiple car classes
+# th_015_carclass_18 - same as above, but only car class 18
+# th_045_carclass_18 - same as above, but with confidence threshold set to 0.45
