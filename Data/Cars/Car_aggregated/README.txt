@@ -13,4 +13,6 @@ obtain_metadata_ukraine3.py
 # There was no OSM nor Population threshold filtering approach.
 
 # Thus, these data should only be used to retrieve images with zero car 
-detections and image features.
+detections and image features. In the Data/Cars/Car_coords folder, images 
+with zero car detections were not kept in the processing pipline. These 
+has to be retrieved from the current folder.
