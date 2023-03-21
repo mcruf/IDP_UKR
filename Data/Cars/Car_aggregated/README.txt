@@ -16,3 +16,8 @@ obtain_metadata_ukraine3.py
 detections and image features. In the Data/Cars/Car_coords folder, images 
 with zero car detections were not kept in the processing pipline. These 
 has to be retrieved from the current folder.
+
+
+# th_015 - outputs for 0.15 confidence threshold with multiple car classes
+# th_015_carclass_18 - same as above, but only car class 18
+# th_045_carclass_18 - same as above, but with confidence threshold set to 0.45
