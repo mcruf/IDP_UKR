@@ -6,8 +6,10 @@
 
 
 # The following script aims aggregates the geolocated car detection file,
-# such that we have the the total nuber of cars per image.
-#
+# such that we have the the total number of cars per image.
+# It is essentially meant to be applied once the geolocated car detection files
+# have been cleaned by the OSM_Filtering_script_01.R pipeline - ie, removal of false-positives.
+
 
 
 ## Code written by: Marie-Christine Rufener < macrufener@gmail.com >
@@ -211,6 +213,8 @@ nlevels(cars2$Image) == dim(dat)[1] ## Sanity check; should be TRUE
 
 # 3.1) Load the original aggregated data
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+## FIXME: Include data in the respective folders!
 if(THRESHOLD == 'TH_15'){
   original <- read.csv('Data/Cars/Car_aggregated/th_015_carclass_18/')
 } else if(THRESHOLD == 'TH_45'){
@@ -260,5 +264,15 @@ dat <- rbind(dat, missing)
 #~~~~~~~~~~~~~~~~~~~~~
 # 4) Save the output
 #~~~~~~~~~~~~~~~~~~~~~
+if(CARS == 'original' & THRESHOLD == 'TH_15'){
+  OUTDIR <- file.path('Data', 'Cars','Car_aggregated', 'Original','th_015_carclass_18')
+} else if(CARS == 'original' & THRESHOLD == 'TH_45'){
+  OUTDIR <- file.path('Data', 'Cars','Car_aggregated', 'Original','th_045_carclass_18')
+} else if(CARS == 'filtered' & THRESHOLD == 'TH_15'){
+  OUTDIR <- file.path('Data', 'Cars','Car_aggregated', 'OSM_filtered','th_015_carclass_18')
+} else if(CARS == 'filtered' & THRESHOLD == 'TH_45'){
+  OUTDIR <- file.path('Data', 'Cars','Car_aggregated', 'OSM_filtered','th_045_carclass_18')
+}
 
-
+OUTFILE <- paste(OUTDIR, 'aggregated_cars.R', sep='/')
+write.csv(dat, OUTFILE, row.names = FALSE)
