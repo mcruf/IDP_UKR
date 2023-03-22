@@ -2,7 +2,7 @@
 #                                                                                 #
 #               Identify images below population threshold                        #
 #                                                                                 #
-####################################################################################
+###################################################################################
 
 
 # The following script aims to identify images that did not cover the bulk of the 
@@ -42,8 +42,6 @@ POP_THRESHOLD <- 0.5 #Define the proportion of population coverage; default is 5
 
 ## Worldpop data
 DINPUT <- c("Count", "Density")[1] #Define whether to use population density or population count; default is 'count'
-
-
 
 #><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
@@ -249,38 +247,9 @@ df$Proportion <- df$Npop_img / df$Npop_aoi
 ### Set Threshold
 df$Pop_threshold <- ifelse(df$Proportion < POP_THRESHOLD, "Below", "Above") # Below = below 50%, Above = above 50%
 
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# 3) Filter out images below population threshold
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Input data: OSM-filtered aggregated car data for 0.45 confidence threshold
-# ~/Data/Cars/Car_aggregated/OSM_filtered/th_045_carclass_18
-
-# 3.1) Read aggregated car data
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# NOTE: Change to whatever desired aggregated data
-cars <- read.csv('Data/Cars/Car_aggregated/OSM_filtered/th_045_carclass_18/aggregated_cars.csv')
-
-
-# 3.2) Merge pop-threshold to car data
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-## Standardize city names
-setdiff(df$City, cars$City)
-levels(df$City)[levels(df$City) == "Bila_Tserkva"] <- "Bila-Tserkva"
-levels(df$City)[levels(df$City) == "Velyki_Kopani"] <- "Velyki-Kopani"
-
-setdiff(df$City, cars$City) # Sanity check
-
-df$Image <- factor(paste(df$City, df$Date, sep="_"))
-
-## merge the data
-dat <- merge(cars, df[,c('Npop_img', 'Npop_aoi', 'Proportion', 'Pop_threshold', 'Image')], by='Image')
-
-
-rm(list = setdiff(ls(), 'dat'))
-
+OUTDIR <- file.path('Data','Population','Coverage')
+OUTFILE <-  paste(OUTDIR, 'Population_coverage.csv', sep='/')
+write.csv(df, OUTFILE, row.names = FALSE)
 
 
 #><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
