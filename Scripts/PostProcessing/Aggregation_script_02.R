@@ -274,5 +274,5 @@ if(CARS == 'original' & THRESHOLD == 'TH_15'){
   OUTDIR <- file.path('Data', 'Cars','Car_aggregated', 'OSM_filtered','th_045_carclass_18')
 }
 
-OUTFILE <- paste(OUTDIR, 'aggregated_cars.R', sep='/')
+OUTFILE <- paste(OUTDIR, 'aggregated_cars.csv', sep='/')
 write.csv(dat, OUTFILE, row.names = FALSE)
