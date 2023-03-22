@@ -216,9 +216,9 @@ nlevels(cars2$Image) == dim(dat)[1] ## Sanity check; should be TRUE
 
 ## FIXME: Include data in the respective folders!
 if(THRESHOLD == 'TH_15'){
-  original <- read.csv('Data/Cars/Car_aggregated/th_015_carclass_18/')
+  original <- read.csv('Data/Cars/Car_aggregated/Original/th_015_carclass_18/results_ukraine_all_015_smallcar.csv')
 } else if(THRESHOLD == 'TH_45'){
-  original <- read.csv('Data/Cars/Car_aggregated/th_045_carclass_18/')
+  original <- read.csv('Data/Cars/Car_aggregated/Original/th_045_carclass_18/results_ukraine_all_045_smallcar.csv')
 }
 
 ## Remove b_s1/s2 images (older image version not in use anymore)
