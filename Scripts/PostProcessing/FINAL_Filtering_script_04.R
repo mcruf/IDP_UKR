@@ -247,6 +247,9 @@ cars2 <- filter(cars, Pop_threshold == 'Above') #Keep only images above populati
 # 4.2) Cloud and haze obstruction filtering 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Often associated to very small number of cars, or even zero.
+## First, we remove images with zero/very small no. of cars that is due full cloud obstructions.
+## Then, we remove images based on the imagery list that contains information on which images should
+## be additionally removed (i.e., images that can be considerably covered by clouds)
 
 
 ### Identify images with zero car counts
@@ -268,6 +271,26 @@ if(THRESHOLD == 'TH_15'){
 }
 
 cars2 <- filter(cars2, !(Image %in% small)) #Remove these images
+
+
+
+### Check list with additional images to remove (for cleaner analysis)
+dfcl <- readxl::read_excel("Imagery_EDA/Image_cloud_snow_carDetection_evaluation.xlsx")
+dfcl <- filter(dfcl, Keep_image == 'No') #Images that should be removed
+colnames(dfcl)[1:2] <- c('City', 'Date')
+
+setdiff(cars2$City, dfcl$City)
+dfcl$City <- as.factor(dfcl$City)
+levels(dfcl$City)[levels(dfcl$City) == "Bila_Tserkva"] <- "Bila-Tserkva"
+levels(dfcl$City)[levels(dfcl$City) == "Velyki_Kopani"] <- "Velyki-Kopani"
+setdiff(cars2$City, dfcl$City)
+
+dfcl$Image <- paste(dfcl$City, dfcl$Date, sep ='_')
+
+rmv <- levels(factor(dfcl$Image))
+
+cars2 <- filter(cars2, !(Image %in% rmv))
+
 
 
 # 4.3) Save the cleaned data output
