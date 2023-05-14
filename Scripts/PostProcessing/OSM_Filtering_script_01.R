@@ -26,7 +26,7 @@
 
 
 ## Code written by: Marie-Christine Rufener < macrufener@gmail.com > 
-## Last update: March 2023
+## Last update: May 2023
 
 
 #><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
@@ -47,7 +47,7 @@ library('httr')
 #~~~~~~~~~~~~~~~~~~
 # Default inputs
 #~~~~~~~~~~~~~~~~~~
-## Cities to consider - currently all cities are considered
+## Cities to consider - currently all cities are included
 cities <- c("Cherkasy", "Smila", "Chernihiv", "Hremiach", "Nizhyn", "Chernivtsi",
             "Mamalyha", "Porubne", "Storozhynets", "Dnipro", "KryvyiRih",
             "Donetsk", "Kramatorsk", "Mariupol", "Ivano-Frankivsk", "Kolomyiska",
@@ -66,6 +66,14 @@ cities <- c("Cherkasy", "Smila", "Chernihiv", "Hremiach", "Nizhyn", "Chernivtsi"
 ## Confidence threshold (based on small vehicles only - object class 18)
 THRESHOLD <- c("TH_15", "TH_45")[2] # 0.15 and 0.45 (less and more conservative thresholds)
   
+
+#~~~~~~~~~
+# Set WD
+#~~~~~~~~~
+## Set main working directory
+setwd("~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/GitHub/IDP_UKR/") 
+
+
 
 #><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
@@ -92,7 +100,7 @@ for(city in 1:length(cities)){
   
   # 1.1) List all files
   #~~~~~~~~~~~~~~~~~~~~~~~
-  files <- list.files(path= "~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/GIS/SatelliteImage/Img_AOI/",
+  files <- list.files(path= "GIS/SatelliteImage/Img_AOI/",
                       recursive = TRUE,
                       full.names = TRUE,
                       pattern = "\\.shp$")
@@ -538,14 +546,14 @@ for(city in 1:length(cities)){
   
   
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  # 4) Remove false car detections
+  # 4) Remove false car detection
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   ## Any cars detected inside the osm feature polygons will be removed
   
   
   # 4.1) Load car coordinates data
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  # There is a sepparate csv file for each satelltile image (city-date)
+  # There is a separate csv file for each satellite image (city-date)
   # Here all individual csv files will be bind into a single data frame
   
   
@@ -553,11 +561,11 @@ for(city in 1:length(cities)){
   if(THRESHOLD == "TH_15"){
     ## List all files
     ### With full path
-    # f <- list.files("/Users/marie-christinerufener/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/Data/Cars/Car_coords/th_015_oct22/Clean_new", # This version uses vehicle categories other than class 18 
+    # f <- list.files("Data/Cars/Car_coords/th_015_oct22/Clean_new", # This version uses vehicle categories other than class 18 
     #                 full.names = TRUE,
     #                 pattern = ".csv" )
-  
-    f <- list.files("/Users/marie-christinerufener/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/Data/Cars/Car_coords/th_015_oct22_carclass_18/original",
+    
+    f <- list.files("Data/Cars/Car_coords/th_015_oct22_carclass_18/original",
                     full.names = TRUE,
                     pattern = ".csv" )
   
@@ -566,20 +574,20 @@ for(city in 1:length(cities)){
     #                  full.names = F,
     #                  pattern = ".csv" )
     
-    ff <- list.files("/Users/marie-christinerufener/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/Data/Cars/Car_coords/th_015_oct22_carclass_18/original",
+    ff <- list.files("Data/Cars/Car_coords/th_015_oct22_carclass_18/original",
                      full.names = F,
                      pattern = ".csv" )
   
   
   } else if(THRESHOLD == "TH_45"){
     
-    f <- list.files("/Users/marie-christinerufener/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/Data/Cars/Car_coords/th_045_carclass_18/original",
+    f <- list.files("Data/Cars/Car_coords/th_045_carclass_18/original",
                     full.names = TRUE,
                     pattern = ".csv" )
     
     
     ### Only file names
-    ff <- list.files("/Users/marie-christinerufener/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/Data/Cars/Car_coords/th_045_carclass_18/original",
+    ff <- list.files("Data/Cars/Car_coords/th_045_carclass_18/original",
                      full.names = F,
                      pattern = ".csv" )
   } 
@@ -668,9 +676,13 @@ for(city in 1:length(cities)){
   ### Main output directory
   
   if(THRESHOLD == 'TH_15'){
-    DIR <- file.path("/Users","marie-christinerufener", "OneDrive - Hamad bin Khalifa University","Projects", "Ukraine","Data","Cars", "Car_coords","th_015_oct22_carclass_18", "OSM_filtered")
+    #DIR <- file.path("/Users","marie-christinerufener", "OneDrive - Hamad bin Khalifa University","Projects", "Ukraine","Data","Cars", "Car_coords","th_015_oct22_carclass_18", "OSM_filtered")
+    DIR <- file.path("/Users","marie-christinerufener", "OneDrive - Hamad bin Khalifa University","Projects", "Ukraine", "GitHub", "IDP_UKR", "Data", "Cars", "Car_coords", "th_015_oct22_carclass_18", "OSM_filtered")
+    
   }else if(THRESHOLD == 'TH_45'){
-    DIR <- file.path("/Users","marie-christinerufener", "OneDrive - Hamad bin Khalifa University","Projects", "Ukraine","Data","Cars", "Car_coords","th_045_carclass_18", "OSM_filtered")
+    #DIR <- file.path("/Users","marie-christinerufener", "OneDrive - Hamad bin Khalifa University","Projects", "Ukraine","Data","Cars", "Car_coords","th_045_carclass_18", "OSM_filtered")
+    DIR <- file.path("/Users","marie-christinerufener", "OneDrive - Hamad bin Khalifa University","Projects", "Ukraine",  "GitHub", "IDP_UKR", "Data", "Cars", "Car_coords", "th_045_carclass_18", "OSM_filtered")
+    
   }
   
   if(isFALSE(dir.exists(DIR))){
