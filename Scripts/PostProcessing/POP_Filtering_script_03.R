@@ -10,12 +10,13 @@
 
 # Population distribution will be evaluated in terms of the WorldPop proportion coverage
 # of the given image relative to its city-specific AOI.
-# The threshold is defined upon the proportion value, where images below the threshold
-# will be removed.
+# The threshold is defined upon the proportion value, where images below the given threshold
+# will be removed. Here, we use a threshold of 50%, that is, images covering less than 50% of the
+## population distribution will be removed.
 
 
 ## Code written by: Marie-Christine Rufener < macrufener@gmail.com > 
-## Last update: March 2023
+## Last update: May 2023
 
 
 #><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
