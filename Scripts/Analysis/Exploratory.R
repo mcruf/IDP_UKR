@@ -73,10 +73,11 @@ cars <- do.call('rbind', cars)
 table(cars$Threshold) #No. of images for each threshold
 
 
+
+
 #~~~~~~~~~~~
 # 2) Plots
 #~~~~~~~~~~~
-
 
 # 2.1) No. images per hour of the day
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -94,14 +95,16 @@ ggplot(cars, aes(x = as.factor(Hour))) +
         #axis.line = element_line(color = 'black'),
         legend.position = "none")
 
-ggsave('~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/Manuscript/Figures/Exploratory/hour_of_dat.jpg',
-       dpi = 300, width = 20, height = 20, unit='cm',
-       bg = 'white')
+# ggsave('../../Manuscript/Figures/Exploratory/hour_of_dat.jpg',
+#        dpi = 300, width = 20, height = 20, unit='cm',
+#        bg = 'white')
 
 
 
 # 2.2) No. images per city
 #~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+## Get total no. of images per city for 0.45 threshold
 dobs <- cars %>% 
   filter(Threshold == "th_045_carclass_18") %>%
   group_by(City) %>% 
@@ -111,7 +114,7 @@ dobs <- cars %>%
 
 ## Define color palette
 #cols = rev(brewer.pal(n = 11, name = 'RdBu'))
-nb.cols = 60 #60 obtasts
+nb.cols = 60 #60 oblasts
 cols = rev(colorRampPalette(brewer.pal(11, "BrBG"))(nb.cols))
 
 ## Now go for the plot
@@ -119,7 +122,6 @@ ggplot(dobs, aes(x = reorder(City, -nobs), y = nobs,  fill= nobs)) +
   geom_col(alpha = 1, colour="gray95") + 
   #scale_fill_gradientn(colours = cols, limits=c(1, 36), na.value="gray95") + 
   scale_fill_viridis(option = 'G', direction = -1) +
-  #coord_flip() +
   scale_y_discrete(expand = c(0, 0)) +
   theme_bw() +
   ylab('No. images') +
@@ -131,8 +133,8 @@ ggplot(dobs, aes(x = reorder(City, -nobs), y = nobs,  fill= nobs)) +
         #axis.line = element_line(color = 'black'),
         legend.position = "none")
 
-ggsave('~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/Manuscript/Figures/Exploratory/No_images_per_city.jpg',
-       dpi = 300, width = 30, height = 15, unit='cm')
+# ggsave('../../Manuscript/Figures/Exploratory/No_images_per_city.jpg',
+#        dpi = 300, width = 30, height = 15, unit='cm')
 
 
 
@@ -168,14 +170,13 @@ dobs_wide[is.na(dobs_wide)] <- 0 #Time stamps for which we don't have observatio
 dobs2b <- tidyr::gather(dobs_wide, City, nobs, Alchevsk:Zhytomyr)
 
 
-
-## Reorder matrix with cities ranked from west-east
-
-## Source script that classifies the city/oblast according to its geographical position
-### Define to which spatial resolution the data should be evaluated
+### Reorder matrix with cities ranked from west-east
+#### Source script that classifies the city/oblasts according to its geographical position
+##### Define to which spatial resolution the data should be evaluated
 AGGREGATE <- c('City', 'Oblast')[1]
 
-source('~/Library/CloudStorage/OneDrive-HamadbinKhalifaUniversity/Projects/Ukraine/Imagery_EDA/WorldPop_coverage/CityOblast_classification_west-east.R')
+#source('~/Library/CloudStorage/OneDrive-HamadbinKhalifaUniversity/Projects/Ukraine/Imagery_EDA/WorldPop_coverage/CityOblast_classification_west-east.R')
+source('Scripts/Analysis/CityOblast_classification_west-east.R')
 
 classification <- aoi_classified %>% 
   arrange(X, Y) %>%
@@ -186,7 +187,7 @@ classification <- aoi_classified %>%
 classification$City <- as.factor(classification$City)
 setdiff(classification$City, dobs2b$City)
 
-### Standadize city names
+### Standardize city names
 levels(classification$City)[levels(classification$City) == 'Velyki_Kopani'] <- 'Velyki-Kopani'
 levels(classification$City)[levels(classification$City) == 'Bila_Tserkva'] <- 'Bila-Tserkva'
 levels(classification$City)[levels(classification$City) == 'Zaporizhia'] <- 'Zaporizhzhia'
@@ -200,7 +201,7 @@ dobs2b <- merge(dobs2b, classification, by ='City')
 
 
 dobs2b$City <- factor(dobs2b$City, 
-                          levels=classification$City)
+                      levels=classification$City)
 
 
 west <- classification %>% filter(Region == 'West') %>% select(City)
@@ -217,9 +218,10 @@ dobs2b$Region <- factor(dobs2b$Region,
                           levels=c('West','Central', 'East'))
 
 dobs2b <- dobs2b %>%
-  filter(!(City %in% c('Berdychiv', 'Chortkiv', 'Hremiach', 'Kozyatyn', 'Udobne'))) #We remove these cities because they only have 1 image throghout the time series (see previous plot)
+  filter(!(City %in% c('Berdychiv', 'Chortkiv', 'Hremiach', 'Kozyatyn', 'Udobne'))) #We remove these cities because they only have 1 image along the time series (see previous plot)
 
 dobs2b[,c('City', 'Region')] <- lapply(dobs2b[,c('City', 'Region')], factor )
+
 
 ## Define color palette
 cols = rev(brewer.pal(n = 7, name = 'RdBu'))
@@ -228,11 +230,9 @@ dobs2b %>%
   ggplot( aes(x=interaction(City,Region), y=YearMonth, fill=nobs, label=nobs))+
   geom_tile(colour = "white", linewidth = 0.5) +
   geom_text(col='white') +
-  #scale_fill_gradientn(colours=rev(ocean.ice(7)), limits=c(1, 7), na.value="gray95") +
   scale_fill_gradientn(colours = cols, limits=c(1, 7), na.value="gray95") + 
   #scale_fill_gradientn(colours = c("gray95", "blue", "red"), values = c(0,0.2,0.8)) +
   #scale_fill_gradient(low="blue", high="red", limits=c(1, 7),na.value="white") +
-  
   theme_bw() +
   ylab('Time') +  xlab('') + 
   labs(fill='No. \nImages') +  
@@ -254,6 +254,6 @@ dobs2b %>%
          ggh4x.axis.nesttext.x = element_text(colour = "gray40", angle = 360, hjust = 0.5, face ='bold',
                                               margin = unit(c(3, 0, 0, 0), "mm")))
 
-ggsave('~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/Manuscript/Figures/Exploratory/No_images_per_time.jpg',
-       dpi = 300, width = 25, height = 20, unit='cm')
+# ggsave('../../Manuscript/Figures/Exploratory/No_images_per_time.jpg',
+#        dpi = 300, width = 25, height = 20, unit='cm')
 
