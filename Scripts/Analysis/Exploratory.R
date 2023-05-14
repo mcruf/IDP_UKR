@@ -4,7 +4,13 @@
 #                                                                     #
 #######################################################################
 
+## The following script provides the plots related to the exploratory analysis.
+## Imagery effect on car densities are evaluated.
 
+## Please adapt the folder paths according to your own needs!
+
+## Code written by: Marie-Christine Rufener < macrufener@gmail.com > 
+## Last update: May 2023
 
 
 #~~~~~~~~~~~~~~~~
@@ -19,18 +25,26 @@ library(pals)
 library(ggh4x)
 #library(plot.matrix)
 
+
 #~~~~~~~~~~~~
 # Functions
 #~~~~~~~~~~~~
+## Will be used for the plots at the end of the script
 everysecond <- function(x){
   x <- unique(x)
   x[seq(2, length(x), 2)] <- ""
   x
 }
 
+
+#~~~~~~~~~
+# Set WD
+#~~~~~~~~~
+## Set main working directory
+setwd("~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/GitHub/IDP_UKR/") 
+
 #><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
-setwd("~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine") ## Set appropriate WD
 
 
 #~~~~~~~~~~~~~~~~~~~~~
