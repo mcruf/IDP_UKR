@@ -5,15 +5,16 @@
 ##################################################
 
 
-# The following script aims aggregates the geolocated car detection file,
+# The following scriptaggregates the geolocated car detection file,
 # such that we have the the total number of cars per image.
 # It is essentially meant to be applied once the geolocated car detection files
 # have been cleaned by the OSM_Filtering_script_01.R pipeline - ie, removal of false-positives.
 
+## Please adapt the folder paths according to your own needs!
 
 
 ## Code written by: Marie-Christine Rufener < macrufener@gmail.com >
-## Last update: March 2023
+## Last update: May 2023
 
 
 
@@ -31,7 +32,6 @@ library(dplyr)
 # Default inputs
 #~~~~~~~~~~~~~~~
 
-
 ## Car geolocations
 CARS <- c("original", "filtered") [2] #original = original car detection file, filtered = car detection file filtered by OSM layers (see script: OSM_Filtering.R); default is filtered
 
@@ -40,19 +40,23 @@ CARS <- c("original", "filtered") [2] #original = original car detection file, f
 THRESHOLD <- c("TH_15", "TH_45") [2] # 0.15 and 0.45 (less and more conservative thresholds); default is 0.45
 
 
+#~~~~~~~~~
+# Set WD
+#~~~~~~~~~
+## Set main working directory
+#setwd("~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine")
+setwd("~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/GitHub/IDP_UKR/") 
+
 #><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>><>
 
 
-## NOTE: please adapt folder paths according to your needs
 
 
 #~~~~~~~~~~~~~~~
 # 1) Load data
 #~~~~~~~~~~~~~~~
-# There is a separate csv file for each satelltile image (city-date)
+# There is a separate csv file for each satellite image (city-date)
 # Here, all individual csv files will be loaded and then bound into a single data frame
-
-setwd("~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine")
 
 
 ## List all files
@@ -198,12 +202,12 @@ nlevels(cars2$Image) == dim(dat)[1] ## Sanity check; should be TRUE
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# 3) Retrieve images with zero-car detections
+# 3) Retrieve images with zero-car detection
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# It is important to distinguish true zeros (i.e., 'clean' images with no car detections), from
+# It is important to distinguish true zeros (i.e., 'clean' images with no car detection), from
 # false zeros (i.e., images fully obstructed by dense cloud layers).
 
-# In order to distinguish these types of zeros, we will have to retrieve images with zero car detections
+# In order to distinguish these types of zeros, we will have to retrieve images with zero car detection
 # from the general aggregated database that is provided by Ferda.
 # This data base essentially provides an output similar to the data in 2.2, with the difference
 # images with zero cars are kept in the aggregation process. 
