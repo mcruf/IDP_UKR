@@ -14,6 +14,7 @@
 # will be removed. Here, we use a threshold of 50%, that is, images covering less than 50% of the
 ## population distribution will be removed.
 
+## Please adapt the folder paths according to your own needs!
 
 ## Code written by: Marie-Christine Rufener < macrufener@gmail.com > 
 ## Last update: May 2023
@@ -44,17 +45,20 @@ POP_THRESHOLD <- 0.5 #Define the proportion of population coverage; default is 5
 ## Worldpop data
 DINPUT <- c("Count", "Density")[1] #Define whether to use population density or population count; default is 'count'
 
+
+#~~~~~~~~~
+# Set WD
+#~~~~~~~~~
+## Set main working directory
+#setwd("~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine")
+setwd("~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/GitHub/IDP_UKR/") 
+
 #><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
 
 #~~~~~~~~~~~~~~~~~~~
 # 1) Load the data
 #~~~~~~~~~~~~~~~~~~~
-
-
-## NOTE: please adapt folder paths according to your needs
-setwd("~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine")
-
 
 # 1.1) Get AOIs
 #~~~~~~~~~~~~~~~~
