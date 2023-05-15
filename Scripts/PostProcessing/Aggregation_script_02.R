@@ -5,7 +5,7 @@
 ##################################################
 
 
-# The following scripta ggregates the geolocated car detection file,
+# The following script aggregates the geolocated car detection file,
 # such that we have the the total number of cars per image.
 # It is essentially meant to be applied once the geolocated car detection files
 # have been cleaned by the OSM_Filtering_script_01.R pipeline - ie, removal of false-positives.
