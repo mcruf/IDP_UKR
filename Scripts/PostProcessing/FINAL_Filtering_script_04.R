@@ -11,6 +11,7 @@
 # In addition, we will remove images that are below the population threshold.
 # Finally, we will remove images with zero car counts that are due to cloud obstructions (images fully covered by dense cloud layers)
 
+## Please adapt the folder paths according to your own needs!
 
 ## Code written by: Marie-Christine Rufener < macrufener@gmail.com > 
 ## Last update: March 2023
@@ -32,13 +33,20 @@ library(lubridate)
 THRESHOLD <- c("TH_15", "TH_45") [2] # 0.15 and 0.45 (less and more conservative thresholds); default is 0.45
 
 
+
+#~~~~~~~~~
+# Set WD
+#~~~~~~~~~
+## Set main working directory
+#setwd("~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine")
+setwd("~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/GitHub/IDP_UKR/") 
+
+
 #><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~
 # 1) Load the data files
 #~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-setwd("~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine") ## Set appropriate WD
 
 
 # 1.1) Load OSM-filtered aggregated car data
@@ -60,9 +68,9 @@ popcov <- read.csv('Data/Population/Coverage/Population_coverage.csv')
 # 1.3) Load image feature data
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Retrieve imagery-related features (off-Nadir angle, cloud coverage, etc.)
-imgf <- read.csv("Data/Satellite_Images/ImageFeatures/image_features_oct22.csv") ##Off-nadir, cloud cover, etc.
-imgf2 <- read.csv("Data/Satellite_Images/ImageFeatures/Downloaded_imagery_summary_oct22.csv") ## image coverage, AOI coverage, etc.
-imgf3 <- read.csv("Data/Satellite_Images/ImageFeatures/list_cities.csv") # ADM info + data collection method
+imgf <- read.csv("Data/ImageFeatures/image_features_oct22.csv") ##Off-nadir, cloud cover, etc.
+imgf2 <- read.csv("Data/ImageFeatures/Downloaded_imagery_summary_oct22.csv") ## image coverage, AOI coverage, etc.
+imgf3 <- read.csv("Data/ImageFeatures/list_cities.csv") # ADM info + data collection method
 
 
 
@@ -160,20 +168,20 @@ cars <- merge(cars, imgf3[,c('Oblast', 'Raion', 'City', 'Selection_reason')], by
 # 3) Add additional information & reorganize data
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# 3.1) Retrieve weighted average features for stiched images
+# 3.1) Retrieve weighted average features for stitched images
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # For the weights, we will use the AOI covered area from each image
-stiched <- subset(cars, N_features_in_img > 1)
+stitched <- subset(cars, N_features_in_img > 1)
 
 # NOTE: IMPROVE THE STEPS BELOW
-clouds <- strsplit(stiched$cloudCover, ","); clouds <- lapply(clouds, as.numeric)
-nadir <- strsplit(stiched$offNadirAngle, ","); nadir <- lapply(nadir, as.numeric)
-sunelevation <- strsplit(stiched$sunElevation, ","); sunelevation <- lapply(sunelevation, as.numeric)
-sunazimuth <- strsplit(stiched$sunAzimuth, ","); sunazimuth <- lapply(sunazimuth, as.numeric)
-acquisitionDate <- strsplit(stiched$acquisitionDate, ",")
+clouds <- strsplit(stitched$cloudCover, ","); clouds <- lapply(clouds, as.numeric)
+nadir <- strsplit(stitched$offNadirAngle, ","); nadir <- lapply(nadir, as.numeric)
+sunelevation <- strsplit(stitched$sunElevation, ","); sunelevation <- lapply(sunelevation, as.numeric)
+sunazimuth <- strsplit(stitched$sunAzimuth, ","); sunazimuth <- lapply(sunazimuth, as.numeric)
+acquisitionDate <- strsplit(stitched$acquisitionDate, ",")
 
 
-weights <- strsplit(stiched$Perc_area_covered_by_feature, ","); weights <- lapply(weights, as.numeric)
+weights <- strsplit(stitched$Perc_area_covered_by_feature, ","); weights <- lapply(weights, as.numeric)
 
 features <- NULL
 for(i in seq_along(clouds)){
@@ -187,7 +195,7 @@ for(i in seq_along(clouds)){
   
 }
 
-features$Image <- paste(factor(stiched$Image))
+features$Image <- paste(factor(stitched$Image))
 
 
 ## Now merge the info back to the original df
@@ -275,8 +283,8 @@ cars2 <- filter(cars2, !(Image %in% small)) #Remove these images
 
 
 ### Check list with additional images to remove (for cleaner analysis)
-dfcl <- readxl::read_excel("Imagery_EDA/Image_cloud_snow_carDetection_evaluation.xlsx")
-dfcl <- filter(dfcl, Keep_image == 'No') #Images that should be removed
+dfcl <- readxl::read_excel("Data/ImageFeatures/Image_cloud_snow_carDetection_evaluation.xlsx")
+dfcl <- filter(dfcl, Keep_image == 'No') #Images that should be removed (because of dense clouds obstructing significant part of the image)
 colnames(dfcl)[1:2] <- c('City', 'Date')
 
 setdiff(cars2$City, dfcl$City)
