@@ -433,7 +433,7 @@ Main_theme <- theme(axis.text.x = element_text(size = 16),
 ### Now go for the final plot
 if(length(dat19) == 1){
   
-  df_tot %>%
+ p2 <- df_tot %>%
     group_by(Month, Contrast) %>%
     dplyr::summarize(Totpop = sum(Npop)) %>%
     #ungroup() %>%
@@ -478,7 +478,7 @@ if(length(dat19) == 1){
 
   
 } else if(length(dat19) == 2){
-  df_tot %>%
+  p2 <- df_tot %>%
     group_by(Month, Contrast) %>%
     dplyr::summarize(Totpop = sum(Npop)) %>%
     ungroup() %>%
@@ -521,7 +521,7 @@ if(length(dat19) == 1){
     Main_theme()
   
 } else if(length(dat19) == 3){
-  df_tot %>%
+  p2 <- df_tot %>%
     group_by(Month, Contrast) %>%
     dplyr::summarize(Totpop = sum(Npop)) %>%
     ungroup() %>%
@@ -563,4 +563,23 @@ if(length(dat19) == 1){
     theme_bw() +
     Main_theme
 }
+
+
+### Save the output
+DIR <- file.path("/Users","marie-christinerufener", "OneDrive - Hamad bin Khalifa University",
+                 "Projects", "Ukraine", "Manuscript", "Figures", "IDP", "ModelFit", int)
+
+## Create city-specific directory
+if(isFALSE(dir.exists(DIR))){
+  dir.create(DIR)
+}
+
+## Set output file name
+OUTFILE <- paste(paste(DIR, paste("IDP_prediction", int,sep = "_"), sep ="/"), ".jpg",sep = "")
+
+
+### Save
+ggsave(filename = OUTFILE, 
+       plot = p2,
+       dpi = 300, width = 35, height = 25, unit='cm')
 
