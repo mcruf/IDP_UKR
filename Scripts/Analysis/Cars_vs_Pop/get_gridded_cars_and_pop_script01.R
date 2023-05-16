@@ -1,20 +1,27 @@
 ######################################################################
 #                                                                    #
 #      Evaluate relationship between No. people and No. of cars      #
-#                  on several spatial granularity                    #
 #                                                                    #
-#      - Part 1: Get values at various grid resolutions -            #
+#            - Part 1: Get gridded cars and population               #
+#                   at various grid resolutions -                    #
 #                                                                    #
 ######################################################################
 
 
-# The following script aims to evaluate whether there is a positive
-# relationship between the number of people (WorldPop) and cars that 
-# were identified from the satellite image.
+# The following script computes the average no. of cars and no. of people
+# at various grid resolutions. Average no. of cars/people can be computed at
+# different temporal resolutions, but here we focus on a monthly resolution.
 
-# To do so, a spatial grid with different resolutions
-# will be built for each city, whereby WorldPop and cars
+# The overall goal is to evaluate the relationship between gridded cars and population,
+# and to use this relationship to predict IDPs during the conflict year (i.e., 2022).
+
+# This script represents the first part of the car~pop evaluation.
+# Here, for each city a spatial grid is built, whereby WorldPop and cars
 # will be counted for each individual grid cell and given city-time stamp.
+# The output of the script is a data frame containing the gridded pop and cars.
+# This output is then used in the predicting_IDPs_script02.R script, the second
+# part of the car~pop evaluation.
+
 
 ## Please update input & output folder paths accordingly 
 
@@ -35,10 +42,6 @@ library(dplyr)
 library(mapview)
 library(svMisc)
 library(stringr)
-
-
-
-
 
 
 #~~~~~~~~~~~~~~~
