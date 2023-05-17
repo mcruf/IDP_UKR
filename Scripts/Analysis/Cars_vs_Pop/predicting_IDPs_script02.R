@@ -205,8 +205,15 @@ cities <- cities[!is.na(cities)] #Remove NAs
 # 3.2) Get common months for city of interest
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+## Correct city name (for plotting purposes)
+cities[which(cities == 'Bila_Tserkva')] <- 'Bila-Tserkva' 
+names(popcar_aggr_grid)[which(names(popcar_aggr_grid) == 'Bila_Tserkva')] <- 'Bila-Tserkva' 
+
+
+
 ## Select city of interest
-int <- cities[1]
+int <- cities[8]
+
 
 ## Filter data for given city
 dat <- popcar_aggr_grid[[int]] %>%
@@ -241,24 +248,22 @@ dat19 <- split(dat_list[[1]], dat_list[[1]]$Month)
 
 
 ### Quick visual check
-dat19[[1]] %>%
-  # filter(!(Npop < 3000 & Ncars_avg > 85)) %>% 
-  #filter(Ncars_avg < 100) %>% 
-  ggplot(aes(y = Npop, x = Ncars_avg, col = Month, group = Year)) +
-  geom_point(alpha = 0.5, size = 3) +
-  facet_wrap(Month~ ., scales = "free", ncol=1) +
-  ylab("No. Population") + xlab("No. cars") + ggtitle(int) +
-  theme_bw() +
-  geom_smooth(method = "gam", col="black",
-              #method.args = list(family = "poisson"),
-              method.args = list(family = "gaussian"),
-              formula = y ~ s(x, bs = "cr", k=5))
+# dat19[[1]] %>%
+#   ggplot(aes(y = Npop, x = Ncars_avg, col = Month, group = Year)) +
+#   geom_point(alpha = 0.5, size = 3) +
+#   facet_wrap(Month~ ., scales = "free", ncol=1) +
+#   ylab("No. Population") + xlab("No. cars") + ggtitle(int) +
+#   theme_bw() +
+#   geom_smooth(method = "gam", col="black",
+#               #method.args = list(family = "poisson"),
+#               method.args = list(family = "gaussian"),
+#               formula = y ~ s(x, bs = "cr", k=5))
 
 
 ### Filter outstanding outliers for improved model fit
 if(int == 'Alchevsk'){
-  # dat19[[1]] <- dat19[[1]] %>%
-  #               filter(Ncars_avg < 20) 
+  dat19[[1]] <- dat19[[1]] %>%
+                filter(Ncars_avg < 20)
 } else if(int == 'Ivano-Frankivsk'){
   # dat19[[1]] <- dat19[[1]] %>%
   #   filter(Ncars_avg < 90) 
@@ -298,6 +303,60 @@ if(int == 'Alchevsk'){
   dat19[[1]] <- dat19[[1]] %>%
     filter(Ncars_avg < 100)
 }
+
+
+## Save the Raw plots
+f <- list()
+for(i in seq_along(dat19)){
+  
+  ### Set first letter to uppercase (for plotting purposes)
+  dat19[[i]]$Month <- stringr::str_to_title(dat19[[i]]$Month) 
+  
+  f[[i]] <- dat19[[i]] %>%
+            ggplot(aes(y = Npop, x = Ncars_avg, col = Month, group = Year)) +
+            geom_smooth(method = "gam", col="darkorange", fill = 'bisque',
+                        method.args = list(family = "gaussian"), #Should be poisson, but visually gaussian looks better
+                        formula = y ~ s(x, bs = "cr", k=5)) +
+            geom_point(alpha = 0.5, size = 4, col = 'cyan4') +
+            facet_wrap(Month~ ., scales = "free", ncol=1) +
+            ylab("No. People") + xlab("No. Cars") +
+            theme_bw() +
+            scale_y_continuous(labels = comma) +
+            scale_x_continuous(labels = comma) +
+            theme(axis.text.y = element_text(size = 20),
+                  axis.text.x = element_text(size = 20),
+                  axis.title = element_text(size = 22, face = 'bold'),
+                  #legend.title = element_text(hjust = 0.5, size=20, face="bold"),
+                  #legend.text = element_text(size = 20),
+                  strip.background =element_rect(fill="gray98"),
+                  strip.text = element_text(colour = 'gray40', size = 24, face ='bold'),
+                  legend.position = "none")
+          
+          
+  ## Set main directory 
+  DIR <- file.path("/Users","marie-christinerufener", "OneDrive - Hamad bin Khalifa University",
+                   "Projects", "Ukraine", "Manuscript", "Figures", "IDP", "PopCar", int)
+  
+  ## Create city-specific directory
+  if(isFALSE(dir.exists(DIR))){
+    dir.create(DIR)
+  }
+  
+  ## Set output file name
+  OUTFILE <- paste(paste(DIR, paste("PopCar_relationship", int, paste(unique(dat19[[i]]$Month)),sep = "_"), sep ="/"), ".jpg",sep = "")
+  
+  
+  ## Nos save the output
+  jpeg(OUTFILE,
+       bg = "white", res = 300, 
+       width = 20, height = 15, units = 'cm')
+  print(f[[i]])
+  dev.off()
+  
+  
+}
+
+
 
 
 ### Now fit the model
@@ -387,13 +446,13 @@ df_preds <- do.call('rbind', df_preds) ## Bind list into data frame
 
 
 ### To see the progress
-df_preds %>%
-  filter(Month == levels(factor(df_preds$Month))[1] ) %>%
-ggplot(aes(x = Ncars_avg, y = fit)) +
-  geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray92') +
-  facet_wrap(Month ~., scales = 'free') +
-  geom_line(color = '#56B4E9') +
-  theme_bw()
+# df_preds %>%
+#   filter(Month == levels(factor(df_preds$Month))[1] ) %>%
+# ggplot(aes(x = Ncars_avg, y = fit)) +
+#   geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray92') +
+#   facet_wrap(Month ~., scales = 'free') +
+#   geom_line(color = '#56B4E9') +
+#   theme_bw()
 
 
 ### Retrieve relevant info form baseline year
@@ -422,12 +481,13 @@ df_tot[,c('Contrast', 'Month')] <- lapply(df_tot[,c('Contrast', 'Month')] , fact
 df_tot$Month <- stringr::str_to_title(df_tot$Month) 
 
 ### Standardize theme across plots
-Main_theme <- theme(axis.text.x = element_text(size = 16),
-                    axis.text.y = element_text(size = 16),
-                    axis.title = element_text(size = 18, face = "bold"),
+Main_theme <- theme(axis.text.x = element_text(size = 38, face = 'bold'),
+                    axis.text.y = element_text(size = 31),
+                    axis.title.y = element_text(size = 35, face = "bold", vjust = 5),
                     panel.border = element_blank(),
-                    plot.title = element_text(hjust = 0.5, face= "bold", size = 18),
-                    legend.position = "none")
+                    plot.title = element_text(size = 40, face = "bold", hjust = 0.5),
+                    legend.position = "none",
+                    plot.margin = unit(c(t=1,b=0,r=0,l=2), "cm"))
 
 
 ### Now go for the final plot
@@ -439,44 +499,45 @@ if(length(dat19) == 1){
     #ungroup() %>%
     #slice(-1) %>%
     mutate(Month = replace(as.character(Month), Contrast=='Pre-war', "Baseline")) %>%
-    mutate(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
+    arrange(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
     as_tibble() %>%
     mutate(End = lag(Totpop),
            xpos = 1:n()-0.5,
            Diff = Totpop - Totpop[1],
            Percent = paste(round(Diff/End*100,1),"%")) %>%
-    
-    
-    ggplot(aes(x=Contrast, y=Totpop, fill = Month, col = Month)) +
-    geom_bar(stat="identity",
-             #position=position_dodge(preserve = "single"),
-             alpha = 0.5,
-             lwd = 1) +
-    
-    # geom_text(aes(Contrast, label=scales::comma(Totpop)),
-    #           position = position_dodge2(width = 1),
-    #           vjust=5, size = 5, fontface = 'bold',
-    #           col = 'gray40') +
-    # geom_text(aes(Contrast, label=Month),
-    #           position = position_dodge2(width = 1),
-    #           vjust=-0.8, size = 5, fontface = 'bold',
-    #           col = 'gray40') +
-    
-    geom_segment(aes(x = xpos, y = End, xend = xpos, yend = Totpop), 
-                 size = 1.5,
-                 arrow = arrow(length = unit(1.2, "mm"),type = "closed"), col = 'gray30') +
-    geom_text(aes(x = xpos, y =  (End+Diff/2), label = Percent, hjust = 1.2, fontface = 2, size =5), col = 'gray30') +
-    
-    
-    scale_fill_manual(name = "Contrast", values=c("cyan4","darkorange","darkorange")) +
-    scale_color_manual(name = "Contrast", values=c("cyan4", "darkorange", "darkorange")) +
-    scale_y_continuous(labels = comma) +
-    ylab('No. people') + xlab('') + ggtitle(int) +
-    
-    theme_bw() +
-    Main_theme
+          ggplot(aes(x=Contrast, y=Totpop, fill = Month, col = Month)) +
+          geom_bar(stat="identity",
+                   #position=position_dodge(preserve = "single"),
+                   alpha = 0.5,
+                   lwd = 1) +
+          
+          # geom_text(aes(Contrast, label=scales::comma(Totpop)),
+          #           position = position_dodge2(width = 1),
+          #           vjust=5, size = 5, fontface = 'bold',
+          #           col = 'gray40') +
+          geom_text(aes(Contrast, label=Month),
+                    position = position_dodge2(width = 1),
+                    vjust=-0.8, size = 12, fontface = 'bold',
+                    col = 'gray40') +
+          
+          geom_segment(aes(x = xpos, y = End, xend = xpos, yend = Totpop), 
+                       size = 4,
+                       arrow = arrow(length = unit(4, "mm"),type = "closed"),
+                       col = 'gray30') +
 
-  
+            geom_text(aes(x = xpos, y =  (End+Diff/2), label = Percent, 
+                          hjust = ifelse(Diff[-1] < 0 , -0.1, 1.2), 
+                          fontface = 2), size = 15, col = 'gray30') +
+      
+          scale_fill_manual(name = "Contrast", values=c("cyan4","darkorange","darkorange")) +
+          scale_color_manual(name = "Contrast", values=c("cyan4", "darkorange", "darkorange")) +
+          scale_y_continuous(labels = comma) +
+          ylab('No. people') + xlab('') + ggtitle(int) +
+          
+          theme_bw() +
+          Main_theme
+      
+        
 } else if(length(dat19) == 2){
   p2 <- df_tot %>%
     group_by(Month, Contrast) %>%
@@ -484,8 +545,8 @@ if(length(dat19) == 1){
     ungroup() %>%
     slice(-1) %>%
     mutate(Month = replace(as.character(Month), Contrast=='Pre-war', "Baseline")) %>%
+    arrange(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
     mutate(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
-    
     as_tibble() %>%
     mutate(End = lag(Totpop),
            xpos = 1:n()-0.5,
@@ -502,15 +563,19 @@ if(length(dat19) == 1){
     #           position = position_dodge2(width = 1),
     #           vjust=5, size = 5, fontface = 'bold',
     #           col = 'gray40') +
-    # geom_text(aes(Contrast, label=Month),
-    #           position = position_dodge2(width = 1),
-    #           vjust=-0.8, size = 5, fontface = 'bold',
-    #           col = 'gray40') +
+    geom_text(aes(Contrast, label=Month),
+              position = position_dodge2(width = 1),
+              vjust=-0.8, size = 12, fontface = 'bold',
+              col = 'gray40') +
+    
+    # geom_segment(aes(x = xpos, y = End, xend = xpos, yend = Totpop), 
+    #              size = 4,
+    #              arrow = arrow(length = unit(4, "mm"),type = "closed"),
+    #              col = 'gray30') +
     # 
-    geom_segment(aes(x = xpos, y = End, xend = xpos, yend = Totpop), 
-                 size = 1.5,
-                 arrow = arrow(length = unit(1.2, "mm"),type = "closed"), col = 'gray30') +
-    geom_text(aes(x = xpos, y =  (End+Diff/2), label = Percent, hjust = 1.2, fontface = 2, size =5), col = 'gray30') +
+    # geom_text(aes(x = xpos, y =  (End+Diff/2), label = Percent, 
+    #               hjust = ifelse(Diff[-1] < 0 , -0.1, 1.2), 
+    #               fontface = 2), size = 15, col = 'gray30') +
     
     scale_fill_manual(name = "Contrast", values=c("cyan4","darkorange","darkorange")) +
     scale_color_manual(name = "Contrast", values=c("cyan4", "darkorange", "darkorange")) +
@@ -518,7 +583,7 @@ if(length(dat19) == 1){
     
     ylab('No. people') + xlab('') + ggtitle(int) +
     theme_bw() +
-    Main_theme()
+    Main_theme
   
 } else if(length(dat19) == 3){
   p2 <- df_tot %>%
@@ -527,41 +592,46 @@ if(length(dat19) == 1){
     ungroup() %>%
     slice(c(-1, -3)) %>%
     mutate(Month = replace(as.character(Month), Contrast=='Pre-war', "Baseline")) %>%
+    arrange(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
     mutate(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
-    
     as_tibble() %>%
     mutate(End = lag(Totpop),
            xpos = 1:n()-0.5,
            Diff = Totpop - Totpop[1],
            Percent = paste(round(Diff/End*100,1),"%")) %>%
+          ggplot(aes(x=Contrast, y=Totpop, fill = Month, col = Month)) +
+          geom_bar(stat="identity",
+                 position=position_dodge2(preserve = "single"),
+                 alpha = 0.5,
+                 lwd = 1,
+                 width=1) +
+        # geom_text(aes(Contrast, label=scales::comma(Totpop)),
+        #           position = position_dodge2(width = 1),
+        #           vjust=5, size = 5, fontface = 'bold',
+        #           col = 'gray40') +
     
-    ggplot(aes(x=Contrast, y=Totpop, fill = Month, col = Month)) +
-    geom_bar(stat="identity",
-             position=position_dodge2(preserve = "single"),
-             alpha = 0.5,
-             lwd = 1,
-             width=1) +
-    # geom_text(aes(Contrast, label=scales::comma(Totpop)),
-    #           position = position_dodge2(width = 1),
-    #           vjust=5, size = 5, fontface = 'bold',
-    #           col = 'gray40') +
-    # geom_text(aes(Contrast, label=Month),
-    #           position = position_dodge2(width = 1),
-    #           vjust=-0.8, size = 5, fontface = 'bold',
-    #           col = 'gray40') +
-    
-    geom_segment(aes(x = xpos, y = End, xend = xpos, yend = Totpop), 
-                 size = 1.5,
-                 arrow = arrow(length = unit(1.2, "mm"),type = "closed"), col = 'gray30') +
-    geom_text(aes(x = xpos, y =  (End+Diff/2), label = Percent, hjust = 1.2, fontface = 2, size =5), col = 'gray30') +
-    
-    scale_fill_manual(name = "Contrast", values=c("cyan4","darkorange","darkorange")) +
-    scale_color_manual(name = "Contrast", values=c("cyan4", "darkorange", "darkorange")) +
-    scale_y_continuous(labels = comma) +
-    
-    ylab('No. people') + xlab('') + ggtitle(int) +
-    theme_bw() +
-    Main_theme
+        geom_text(aes(Contrast, label=Month),
+                  position = position_dodge2(width = 1),
+                  vjust=-0.8, size = 12, fontface = 'bold',
+                  col = 'gray40') +
+        
+        # geom_segment(aes(x = xpos, y = End, xend = xpos, yend = Totpop), 
+        #              size = 4,
+        #              position_dodge2(preserve = "single"),
+        #              arrow = arrow(length = unit(4, "mm"),type = "closed"),
+        #              col = 'gray30') +
+        # 
+        # geom_text(aes(x = xpos, y =  (End+Diff/2), label = Percent, 
+        #               hjust = ifelse(isTRUE(any(Diff[-1] < 0)) , -0.1, 1.2), 
+        #               fontface = 2), size = 15, col = 'gray30') +
+        
+        scale_fill_manual(name = "Contrast", values=c("cyan4","darkorange","darkorange", "darkorange")) +
+        scale_color_manual(name = "Contrast", values=c("cyan4", "darkorange", "darkorange", "darkorange")) +
+        scale_y_continuous(labels = comma) +
+        
+        ylab('No. people') + xlab('') + ggtitle(int) +
+        theme_bw() +
+        Main_theme
 }
 
 
@@ -581,5 +651,5 @@ OUTFILE <- paste(paste(DIR, paste("IDP_prediction", int,sep = "_"), sep ="/"), "
 ### Save
 ggsave(filename = OUTFILE, 
        plot = p2,
-       dpi = 300, width = 35, height = 25, unit='cm')
+       dpi = 300, width = 45, height = 40, unit='cm')
 
