@@ -453,19 +453,19 @@ if(length(dat19) == 1){
              alpha = 0.5,
              lwd = 1) +
     
-    geom_text(aes(Contrast, label=scales::comma(Totpop)),
-              position = position_dodge2(width = 1),
-              vjust=5, size = 5, fontface = 'bold',
-              col = 'gray40') +
-    geom_text(aes(Contrast, label=Month),
-              position = position_dodge2(width = 1),
-              vjust=-0.8, size = 5, fontface = 'bold',
-              col = 'gray40') +
+    # geom_text(aes(Contrast, label=scales::comma(Totpop)),
+    #           position = position_dodge2(width = 1),
+    #           vjust=5, size = 5, fontface = 'bold',
+    #           col = 'gray40') +
+    # geom_text(aes(Contrast, label=Month),
+    #           position = position_dodge2(width = 1),
+    #           vjust=-0.8, size = 5, fontface = 'bold',
+    #           col = 'gray40') +
     
     geom_segment(aes(x = xpos, y = End, xend = xpos, yend = Totpop), 
                  size = 1.5,
-                 arrow = arrow(length = unit(1.2, "mm"),type = "closed")) +
-    geom_text(aes(x = xpos, y =  (End+Diff/2), label = Percent, hjust = 1.2, fontface = 2, size =5)) +
+                 arrow = arrow(length = unit(1.2, "mm"),type = "closed"), col = 'gray30') +
+    geom_text(aes(x = xpos, y =  (End+Diff/2), label = Percent, hjust = 1.2, fontface = 2, size =5), col = 'gray30') +
     
     
     scale_fill_manual(name = "Contrast", values=c("cyan4","darkorange","darkorange")) +
@@ -498,19 +498,19 @@ if(length(dat19) == 1){
              alpha = 0.5,
              lwd = 1,
              width=1) +
-    geom_text(aes(Contrast, label=scales::comma(Totpop)),
-              position = position_dodge2(width = 1),
-              vjust=5, size = 5, fontface = 'bold',
-              col = 'gray40') +
-    geom_text(aes(Contrast, label=Month),
-              position = position_dodge2(width = 1),
-              vjust=-0.8, size = 5, fontface = 'bold',
-              col = 'gray40') +
-    
+    # geom_text(aes(Contrast, label=scales::comma(Totpop)),
+    #           position = position_dodge2(width = 1),
+    #           vjust=5, size = 5, fontface = 'bold',
+    #           col = 'gray40') +
+    # geom_text(aes(Contrast, label=Month),
+    #           position = position_dodge2(width = 1),
+    #           vjust=-0.8, size = 5, fontface = 'bold',
+    #           col = 'gray40') +
+    # 
     geom_segment(aes(x = xpos, y = End, xend = xpos, yend = Totpop), 
                  size = 1.5,
-                 arrow = arrow(length = unit(1.2, "mm"),type = "closed")) +
-    geom_text(aes(x = xpos, y =  (End+Diff/2), label = Percent, hjust = 1.2, fontface = 2, size =5)) +
+                 arrow = arrow(length = unit(1.2, "mm"),type = "closed"), col = 'gray30') +
+    geom_text(aes(x = xpos, y =  (End+Diff/2), label = Percent, hjust = 1.2, fontface = 2, size =5), col = 'gray30') +
     
     scale_fill_manual(name = "Contrast", values=c("cyan4","darkorange","darkorange")) +
     scale_color_manual(name = "Contrast", values=c("cyan4", "darkorange", "darkorange")) +
@@ -541,19 +541,19 @@ if(length(dat19) == 1){
              alpha = 0.5,
              lwd = 1,
              width=1) +
-    geom_text(aes(Contrast, label=scales::comma(Totpop)),
-              position = position_dodge2(width = 1),
-              vjust=5, size = 5, fontface = 'bold',
-              col = 'gray40') +
-    geom_text(aes(Contrast, label=Month),
-              position = position_dodge2(width = 1),
-              vjust=-0.8, size = 5, fontface = 'bold',
-              col = 'gray40') +
+    # geom_text(aes(Contrast, label=scales::comma(Totpop)),
+    #           position = position_dodge2(width = 1),
+    #           vjust=5, size = 5, fontface = 'bold',
+    #           col = 'gray40') +
+    # geom_text(aes(Contrast, label=Month),
+    #           position = position_dodge2(width = 1),
+    #           vjust=-0.8, size = 5, fontface = 'bold',
+    #           col = 'gray40') +
     
     geom_segment(aes(x = xpos, y = End, xend = xpos, yend = Totpop), 
                  size = 1.5,
-                 arrow = arrow(length = unit(1.2, "mm"),type = "closed")) +
-    geom_text(aes(x = xpos, y =  (End+Diff/2), label = Percent, hjust = 1.2, fontface = 2, size =5)) +
+                 arrow = arrow(length = unit(1.2, "mm"),type = "closed"), col = 'gray30') +
+    geom_text(aes(x = xpos, y =  (End+Diff/2), label = Percent, hjust = 1.2, fontface = 2, size =5), col = 'gray30') +
     
     scale_fill_manual(name = "Contrast", values=c("cyan4","darkorange","darkorange")) +
     scale_color_manual(name = "Contrast", values=c("cyan4", "darkorange", "darkorange")) +
