@@ -68,6 +68,11 @@ THRESHOLD <- c("TH_15", "TH_45") [2] # 0.15 and 0.45 (less and more conservative
 setwd("~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/GitHub/IDP_UKR/") 
 
 
+## Helper functions
+source("Scripts/src/helper_functions.R") #Will be used to save GAM output as table
+
+
+
 #><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>><>
 
 #~~~~~~~~~~~~~~~~~~~~~~
@@ -162,7 +167,7 @@ popcar <- filter(popcar, !(CityDate %in% img$CityDate))
 
 ## Remove empty factor levels
 popcar[,c('CityDate', 'grid_id','City', 'Date', 'Year', 'Month')] <- lapply(popcar[,c('CityDate', 'grid_id','City', 'Date', 'Year', 'Month')]
-,factor)
+                                                                            ,factor)
 
 
 
@@ -171,8 +176,10 @@ popcar[,c('CityDate', 'grid_id','City', 'Date', 'Year', 'Month')] <- lapply(popc
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # There are only a few cities in which there is data
 # for the same month in both baseline (2019) and conflict (2022) years.
-# We have to identify those cities, and subsequently which months are common
-# between the two years.
+# We have to identify those cities, and subsequently evaluate which months are common
+# between the two years. In addition, we have to ensure that only matching grid ids
+# are selected for a given month of different years, such that the total area
+# is preserved.
 
 YEARS <- c('2019', '2022') #Define baseline year and year of interes
 
@@ -192,10 +199,10 @@ for(i in seq_along(CITY)){
   tab[tab>1] <- 1 #transform to binary
   
   if(isTRUE(any(rowSums(tab) >= 2))){ #Any row with sum >= 2 indicates matching months between both years
-
+    
     cities[i] <- cit
   }
-
+  
 }
 
 cities <- cities[!is.na(cities)] #Remove NAs
@@ -212,12 +219,13 @@ names(popcar_aggr_grid)[which(names(popcar_aggr_grid) == 'Bila_Tserkva')] <- 'Bi
 
 
 ## Select city of interest
-int <- cities[8]
+int <- cities[6]
 
 
 ## Filter data for given city
 dat <- popcar_aggr_grid[[int]] %>%
   filter(Year %in% YEARS)
+
 
 ## Get common months between the two years
 dat_list <- split(dat, dat$Year)
@@ -235,16 +243,30 @@ for(i in seq_along(dat_list)){
 }
 
 
+## Keep only matching grid IDs for a given month o
+
+### First, split 2019/2022 data on month
+dat19 <- split(dat_list[[1]], dat_list[[1]]$Month)
+dat22 <- split(dat_list[[2]], dat_list[[2]]$Month)
+
+
+### Now subset for matching grid cells
+for(i in seq_along(comn)){
+  
+  tmp <- intersect(dat19[[i]]$grid_id, dat22[[i]]$grid_id) #Get matching grid cells
+  
+  dat19[[i]] <- filter(dat19[[i]], grid_id %in% tmp)
+  dat22[[i]] <- filter(dat22[[i]], grid_id %in% tmp)
+}
+
+
+
 
 # 3.3) Fit Generalized Additive Model (GAM)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # We estimate the car~pop relationship for a given month from the baseline year (2019).
 # The estimated parameters are then applied on cars detected for the same month 
 # for the conflict year,such that number of people can be predicted.
-
-
-### Split 2019 data on month
-dat19 <- split(dat_list[[1]], dat_list[[1]]$Month)
 
 
 ### Quick visual check
@@ -263,7 +285,7 @@ dat19 <- split(dat_list[[1]], dat_list[[1]]$Month)
 ### Filter outstanding outliers for improved model fit
 if(int == 'Alchevsk'){
   dat19[[1]] <- dat19[[1]] %>%
-                filter(Ncars_avg < 20)
+    filter(Ncars_avg < 20)
 } else if(int == 'Ivano-Frankivsk'){
   # dat19[[1]] <- dat19[[1]] %>%
   #   filter(Ncars_avg < 90) 
@@ -271,8 +293,8 @@ if(int == 'Alchevsk'){
   # dat19[[2]] <- dat19[[2]] %>%
   #   filter(Ncars_avg < 50) 
   # 
-  # dat19[[3]] <- dat19[[3]] %>%
-  #   filter(Ncars_avg < 70) 
+  dat19[[3]] <- dat19[[3]] %>%
+    filter(Ncars_avg < 150)
 } else if(int  == 'Kherson'){
   # dat19[[1]] <- dat19[[1]] %>%
   #   filter(Ncars_avg < 600) 
@@ -298,7 +320,7 @@ if(int == 'Alchevsk'){
   #  filter(Ncars_avg < 400)
 } else if(int  == 'Uzhhorod'){
   dat19[[1]] <- dat19[[1]] %>%
-   filter(Ncars_avg < 1000)
+    filter(Ncars_avg < 1000)
 } else if(int  == 'Zhytomyr'){
   dat19[[1]] <- dat19[[1]] %>%
     filter(Ncars_avg < 100)
@@ -313,26 +335,26 @@ for(i in seq_along(dat19)){
   dat19[[i]]$Month <- stringr::str_to_title(dat19[[i]]$Month) 
   
   f[[i]] <- dat19[[i]] %>%
-            ggplot(aes(y = Npop, x = Ncars_avg, col = Month, group = Year)) +
-            geom_smooth(method = "gam", col="darkorange", fill = 'bisque',
-                        method.args = list(family = "gaussian"), #Should be poisson, but visually gaussian looks better
-                        formula = y ~ s(x, bs = "cr", k=5)) +
-            geom_point(alpha = 0.5, size = 4, col = 'cyan4') +
-            facet_wrap(Month~ ., scales = "free", ncol=1) +
-            ylab("No. People") + xlab("No. Cars") +
-            theme_bw() +
-            scale_y_continuous(labels = comma) +
-            scale_x_continuous(labels = comma) +
-            theme(axis.text.y = element_text(size = 20),
-                  axis.text.x = element_text(size = 20),
-                  axis.title = element_text(size = 22, face = 'bold'),
-                  #legend.title = element_text(hjust = 0.5, size=20, face="bold"),
-                  #legend.text = element_text(size = 20),
-                  strip.background =element_rect(fill="gray98"),
-                  strip.text = element_text(colour = 'gray40', size = 24, face ='bold'),
-                  legend.position = "none")
-          
-          
+    ggplot(aes(y = Npop, x = Ncars_avg, col = Month, group = Year)) +
+    geom_smooth(method = "gam", col="darkorange", fill = 'bisque',
+                method.args = list(family = "gaussian"), #Should be poisson, but visually gaussian looks better
+                formula = y ~ s(x, bs = "cr", k=5)) +
+    geom_point(alpha = 0.5, size = 4, col = 'cyan4') +
+    facet_wrap(Month~ ., scales = "free", ncol=1) +
+    ylab("No. People") + xlab("No. Cars") +
+    theme_bw() +
+    scale_y_continuous(labels = comma) +
+    scale_x_continuous(labels = comma) +
+    theme(axis.text.y = element_text(size = 20),
+          axis.text.x = element_text(size = 20),
+          axis.title = element_text(size = 22, face = 'bold'),
+          #legend.title = element_text(hjust = 0.5, size=20, face="bold"),
+          #legend.text = element_text(size = 20),
+          strip.background =element_rect(fill="gray98"),
+          strip.text = element_text(colour = 'gray40', size = 24, face ='bold'),
+          legend.position = "none")
+  
+  
   ## Set main directory 
   DIR <- file.path("/Users","marie-christinerufener", "OneDrive - Hamad bin Khalifa University",
                    "Projects", "Ukraine", "Manuscript", "Figures", "IDP", "PopCar", int)
@@ -354,6 +376,7 @@ for(i in seq_along(dat19)){
   dev.off()
   
   
+  
 }
 
 
@@ -370,7 +393,8 @@ for(i in seq_along(dat19)){
 #summary(mod_gam[[1]])
 
 
-###  Save the model's visual assessment
+
+###  Save the model's visual and numerical assessment
 
 p <- list()
 for(i in seq_along(mod_gam)){
@@ -394,7 +418,7 @@ for(i in seq_along(mod_gam)){
   
   ## Set output file name
   OUTFILE <- paste(paste(DIR, paste("Model_fit", int, paste(unique(dat19[[i]]$Month)),sep = "_"), sep ="/"), ".jpg",sep = "")
-
+  
   
   ## Nos save the output
   jpeg(OUTFILE,
@@ -403,15 +427,22 @@ for(i in seq_along(mod_gam)){
   print(p[[i]])
   dev.off()
   
+  
+  ## And now the numerical output
+  ## And finally, the numerical output
+  OUTFILE2 <- paste(paste(DIR, paste("Model_NumSummary", int, paste(unique(dat19[[i]]$Month)),sep = "_"), sep ="/"), ".csv",sep = "")
+  
+  gamOut(res = summary(mod_gam[[i]]), 
+         file = OUTFILE2,
+         writecsv = T)
+  
+  
 }
 
 
 
 # 3.4) Predict 2022 population
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## Split 2022 data on month
-dat22 <- split(dat_list[[2]], dat_list[[2]]$Month)
-
 
 ## Retrieve car values for 2022
 warcar <- list()
@@ -427,6 +458,8 @@ for(i in seq_along(dat22)){
                          type = 'response',
                          se = TRUE)
 }
+
+
 
 
 # 3.5) Let's plot the output
@@ -459,10 +492,23 @@ df_preds <- do.call('rbind', df_preds) ## Bind list into data frame
 baseline <- list()
 
 for(i in seq_along(dat19)){
-  baseline[[i]] <- as.data.frame(dat19[[i]][c('Ncars_avg', 'Npop', 'Month')])
+  #baseline[[i]] <- as.data.frame(dat19[[i]][c('Ncars_avg', 'Npop', 'Month')])
+  baseline[[i]] <- as.data.frame(dat19[[i]][c('Npop', 'Month')])
+  
   baseline[[i]]$geometry <- NULL
 }
 baseline <- do.call('rbind', baseline)
+
+### Get average baseline pop (when No. months > 1)
+#### Because grid area do not necessarily overlap between months of different years
+#### we have to calculate the average total population
+baseline <- baseline %>% 
+  group_by(Month) %>% 
+  summarize(Totpop = sum(Npop,  na.rm=T)) %>% 
+  summarize(Avgpop = round(mean(Totpop, na.rm=T))) %>% 
+  data.frame()
+
+baseline$Month <- "Baseline"
 
 
 ### Identify period in each data frame
@@ -471,8 +517,12 @@ df_preds$Contrast <- 'War'
 
 
 ### Keep only important columns from df_preds
-df_preds2 <- df_preds[,c('Ncars_avg', 'fit', 'Month', 'Contrast')]
-colnames(df_preds2)[2] <- 'Npop'
+#df_preds2 <- df_preds[,c('Ncars_avg', 'fit', 'Month', 'Contrast')]
+df_preds2 <- df_preds[,c('fit', 'Month', 'Contrast')]
+
+colnames(df_preds2)[1] <- 'Npop'
+colnames(baseline)[1] <- 'Npop'
+
 df_tot <- rbind(baseline, df_preds2)
 df_tot[,c('Contrast', 'Month')] <- lapply(df_tot[,c('Contrast', 'Month')] , factor)
 
@@ -493,7 +543,7 @@ Main_theme <- theme(axis.text.x = element_text(size = 38, face = 'bold'),
 ### Now go for the final plot
 if(length(dat19) == 1){
   
- p2 <- df_tot %>%
+  p2 <- df_tot %>%
     group_by(Month, Contrast) %>%
     dplyr::summarize(Totpop = sum(Npop)) %>%
     #ungroup() %>%
@@ -505,54 +555,54 @@ if(length(dat19) == 1){
            xpos = 1:n()-0.5,
            Diff = Totpop - Totpop[1],
            Percent = paste(round(Diff/End*100,1),"%")) %>%
-          ggplot(aes(x=Contrast, y=Totpop, fill = Month, col = Month)) +
-          geom_bar(stat="identity",
-                   #position=position_dodge(preserve = "single"),
-                   alpha = 0.5,
-                   lwd = 1) +
-          
-          # geom_text(aes(Contrast, label=scales::comma(Totpop)),
-          #           position = position_dodge2(width = 1),
-          #           vjust=5, size = 5, fontface = 'bold',
-          #           col = 'gray40') +
-          geom_text(aes(Contrast, label=Month),
-                    position = position_dodge2(width = 1),
-                    vjust=-0.8, size = 12, fontface = 'bold',
-                    col = 'gray40') +
-          
-          geom_segment(aes(x = xpos, y = End, xend = xpos, yend = Totpop), 
-                       size = 4,
-                       arrow = arrow(length = unit(4, "mm"),type = "closed"),
-                       col = 'gray30') +
-
-            geom_text(aes(x = xpos, y =  (End+Diff/2), label = Percent, 
-                          hjust = ifelse(Diff[-1] < 0 , -0.1, 1.2), 
-                          fontface = 2), size = 15, col = 'gray30') +
-      
-          scale_fill_manual(name = "Contrast", values=c("cyan4","darkorange","darkorange")) +
-          scale_color_manual(name = "Contrast", values=c("cyan4", "darkorange", "darkorange")) +
-          scale_y_continuous(labels = comma) +
-          ylab('No. people') + xlab('') + ggtitle(int) +
-          
-          theme_bw() +
-          Main_theme
-      
-        
+    ggplot(aes(x=Contrast, y=Totpop, fill = Month, col = Month)) +
+    geom_bar(stat="identity",
+             #position=position_dodge(preserve = "single"),
+             alpha = 0.5,
+             lwd = 1) +
+    
+    # geom_text(aes(Contrast, label=scales::comma(Totpop)),
+    #           position = position_dodge2(width = 1),
+    #           vjust=5, size = 5, fontface = 'bold',
+    #           col = 'gray40') +
+    geom_text(aes(Contrast, label=Month),
+              position = position_dodge2(width = 1),
+              vjust=-0.8, size = 12, fontface = 'bold',
+              col = 'gray40') +
+    
+    geom_segment(aes(x = xpos, y = End, xend = xpos, yend = Totpop), 
+                 size = 4,
+                 arrow = arrow(length = unit(4, "mm"),type = "closed"),
+                 col = 'gray30') +
+    
+    geom_text(aes(x = xpos, y =  (End+Diff/2), label = Percent, 
+                  hjust = ifelse(Diff[-1] < 0 , -0.1, 1.2), 
+                  fontface = 2), size = 15, col = 'gray30') +
+    
+    scale_fill_manual(name = "Contrast", values=c("cyan4","darkorange","darkorange")) +
+    scale_color_manual(name = "Contrast", values=c("cyan4", "darkorange", "darkorange")) +
+    scale_y_continuous(labels = comma) +
+    ylab('No. people') + xlab('') + ggtitle(int) +
+    
+    theme_bw() +
+    Main_theme
+  
+  
 } else if(length(dat19) == 2){
   p2 <- df_tot %>%
     group_by(Month, Contrast) %>%
     dplyr::summarize(Totpop = sum(Npop)) %>%
     ungroup() %>%
-    slice(-1) %>%
+    #slice(-1) %>%
     mutate(Month = replace(as.character(Month), Contrast=='Pre-war', "Baseline")) %>%
     arrange(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
     mutate(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
-    as_tibble() %>%
-    mutate(End = lag(Totpop),
-           xpos = 1:n()-0.5,
-           Diff = Totpop - Totpop[1],
-           Percent = paste(round(Diff/End*100,1),"%")) %>%
-    
+    # as_tibble() %>%
+    # mutate(End = lag(Totpop),
+    #        xpos = 1:n()-0.5,
+    #        Diff = Totpop - Totpop[1],
+    #        Percent = paste(round(Diff/End*100,1),"%")) %>%
+    # 
     ggplot(aes(x=Contrast, y=Totpop, fill = Month, col = Month)) +
     geom_bar(stat="identity",
              position=position_dodge2(preserve = "single"),
@@ -590,48 +640,48 @@ if(length(dat19) == 1){
     group_by(Month, Contrast) %>%
     dplyr::summarize(Totpop = sum(Npop)) %>%
     ungroup() %>%
-    slice(c(-1, -3)) %>%
+    #slice(c(-1, -3)) %>%
     mutate(Month = replace(as.character(Month), Contrast=='Pre-war', "Baseline")) %>%
     arrange(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
     mutate(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
-    as_tibble() %>%
-    mutate(End = lag(Totpop),
-           xpos = 1:n()-0.5,
-           Diff = Totpop - Totpop[1],
-           Percent = paste(round(Diff/End*100,1),"%")) %>%
-          ggplot(aes(x=Contrast, y=Totpop, fill = Month, col = Month)) +
-          geom_bar(stat="identity",
-                 position=position_dodge2(preserve = "single"),
-                 alpha = 0.5,
-                 lwd = 1,
-                 width=1) +
-        # geom_text(aes(Contrast, label=scales::comma(Totpop)),
-        #           position = position_dodge2(width = 1),
-        #           vjust=5, size = 5, fontface = 'bold',
-        #           col = 'gray40') +
+    # as_tibble() %>%
+    # mutate(End = lag(Totpop),
+    #        xpos = 1:n()-0.5,
+    #        Diff = Totpop - Totpop[1],
+    #        Percent = paste(round(Diff/End*100,1),"%")) %>%
+    ggplot(aes(x=Contrast, y=Totpop, fill = Month, col = Month)) +
+    geom_bar(stat="identity",
+             position=position_dodge2(preserve = "single"),
+             alpha = 0.5,
+             lwd = 1,
+             width=1) +
+    # geom_text(aes(Contrast, label=scales::comma(Totpop)),
+    #           position = position_dodge2(width = 1),
+    #           vjust=5, size = 5, fontface = 'bold',
+    #           col = 'gray40') +
     
-        geom_text(aes(Contrast, label=Month),
-                  position = position_dodge2(width = 1),
-                  vjust=-0.8, size = 12, fontface = 'bold',
-                  col = 'gray40') +
-        
-        # geom_segment(aes(x = xpos, y = End, xend = xpos, yend = Totpop), 
-        #              size = 4,
-        #              position_dodge2(preserve = "single"),
-        #              arrow = arrow(length = unit(4, "mm"),type = "closed"),
-        #              col = 'gray30') +
-        # 
-        # geom_text(aes(x = xpos, y =  (End+Diff/2), label = Percent, 
-        #               hjust = ifelse(isTRUE(any(Diff[-1] < 0)) , -0.1, 1.2), 
-        #               fontface = 2), size = 15, col = 'gray30') +
-        
-        scale_fill_manual(name = "Contrast", values=c("cyan4","darkorange","darkorange", "darkorange")) +
-        scale_color_manual(name = "Contrast", values=c("cyan4", "darkorange", "darkorange", "darkorange")) +
-        scale_y_continuous(labels = comma) +
-        
-        ylab('No. people') + xlab('') + ggtitle(int) +
-        theme_bw() +
-        Main_theme
+    geom_text(aes(Contrast, label=Month),
+              position = position_dodge2(width = 1),
+              vjust=-0.8, size = 12, fontface = 'bold',
+              col = 'gray40') +
+    
+    # geom_segment(aes(x = xpos, y = End, xend = xpos, yend = Totpop), 
+    #              size = 4,
+    #              position_dodge2(preserve = "single"),
+    #              arrow = arrow(length = unit(4, "mm"),type = "closed"),
+    #              col = 'gray30') +
+    # 
+    # geom_text(aes(x = xpos, y =  (End+Diff/2), label = Percent, 
+    #               hjust = ifelse(isTRUE(any(Diff[-1] < 0)) , -0.1, 1.2), 
+    #               fontface = 2), size = 15, col = 'gray30') +
+    
+  scale_fill_manual(name = "Contrast", values=c("cyan4","darkorange","darkorange", "darkorange")) +
+    scale_color_manual(name = "Contrast", values=c("cyan4", "darkorange", "darkorange", "darkorange")) +
+    scale_y_continuous(labels = comma) +
+    
+    ylab('No. people') + xlab('') + ggtitle(int) +
+    theme_bw() +
+    Main_theme
 }
 
 
