@@ -219,7 +219,7 @@ names(popcar_aggr_grid)[which(names(popcar_aggr_grid) == 'Bila_Tserkva')] <- 'Bi
 
 
 ## Select city of interest
-int <- cities[6]
+int <- cities[1]
 
 
 ## Filter data for given city
@@ -282,25 +282,35 @@ for(i in seq_along(comn)){
 #               formula = y ~ s(x, bs = "cr", k=5))
 
 
-### Filter outstanding outliers for improved model fit
+### Filter outstanding outliers to avoid biased estimateas
+#### CAREFUL! Values will change if a grid resolution other than the 1x1km is loaded in the input file 
 if(int == 'Alchevsk'){
   dat19[[1]] <- dat19[[1]] %>%
     filter(Ncars_avg < 20)
 } else if(int == 'Ivano-Frankivsk'){
-  # dat19[[1]] <- dat19[[1]] %>%
-  #   filter(Ncars_avg < 90) 
-  # 
-  # dat19[[2]] <- dat19[[2]] %>%
-  #   filter(Ncars_avg < 50) 
-  # 
-  dat19[[3]] <- dat19[[3]] %>%
-    filter(Ncars_avg < 150)
+  
+  dat19[[1]] <- dat19[[1]] %>% #Aug
+    filter(Ncars_avg < 90)
+
+  dat19[[2]] <- dat19[[2]] %>% #Jan
+    filter(Ncars_avg < 50)
+
+  dat19[[3]] <- dat19[[3]] %>% #Jul
+    filter(Ncars_avg < 90)
+  
 } else if(int  == 'Kherson'){
   # dat19[[1]] <- dat19[[1]] %>%
   #   filter(Ncars_avg < 600) 
-} else if(int  == 'Kropyvnytskyi'){
+}else if(int  == 'Khmelnytskyi'){ 
+  # dat19[[1]] <- dat19[[1]] %>% #Jul
+  #   filter(Ncars_avg < XX) 
+  
+  dat19[[2]] <- dat19[[2]] %>% #Jun
+    filter(Ncars_avg < 200)
+  
+}else if(int  == 'Kropyvnytskyi'){
   # dat19[[1]] <- dat19[[1]] %>%
-  #   filter(Ncars_avg < 400) 
+  #   filter(Ncars_avg < 400)
 } else if(int  == 'Lviv'){
   dat19[[1]] <- dat19[[1]] %>%
     filter(!(Npop < 5000 & Ncars_avg > 400))
@@ -311,16 +321,10 @@ if(int == 'Alchevsk'){
     filter(!(Ncars_avg > 80)) 
 } else if(int  == 'Melitopol'){
   # dat19[[1]] <- dat19[[1]] %>%
-  #   filter(Ncars_avg < 150) 
-} else if(int  == 'Melitopol'){
-  # dat19[[1]] <- dat19[[1]] %>%
   #   filter(!(Npop < 3000 & Ncars_avg > 80))
 } else if(int  == 'Uzhhorod'){
-  # dat19[[2]] <- dat19[[2]] %>%
-  #  filter(Ncars_avg < 400)
-} else if(int  == 'Uzhhorod'){
-  dat19[[1]] <- dat19[[1]] %>%
-    filter(Ncars_avg < 1000)
+  # dat19[[1]] <- dat19[[1]] %>%
+  #   filter(Ncars_avg < 1000)
 } else if(int  == 'Zhytomyr'){
   dat19[[1]] <- dat19[[1]] %>%
     filter(Ncars_avg < 100)
@@ -464,6 +468,9 @@ for(i in seq_along(dat22)){
 
 # 3.5) Let's plot the output
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Inspired to some extent by:
+# https://stackoverflow.com/questions/46824998/adding-percent-change-between-bars-on-a-ggplot
+
 
 ### Transform to data frame
 df_preds <- list()
@@ -505,7 +512,7 @@ baseline <- do.call('rbind', baseline)
 baseline <- baseline %>% 
   group_by(Month) %>% 
   summarize(Totpop = sum(Npop,  na.rm=T)) %>% 
-  summarize(Avgpop = round(mean(Totpop, na.rm=T))) %>% 
+  summarize(Avgpop = round(median(Totpop, na.rm=T))) %>% 
   data.frame()
 
 baseline$Month <- "Baseline"
@@ -597,12 +604,12 @@ if(length(dat19) == 1){
     mutate(Month = replace(as.character(Month), Contrast=='Pre-war', "Baseline")) %>%
     arrange(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
     mutate(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
-    # as_tibble() %>%
-    # mutate(End = lag(Totpop),
-    #        xpos = 1:n()-0.5,
-    #        Diff = Totpop - Totpop[1],
-    #        Percent = paste(round(Diff/End*100,1),"%")) %>%
-    # 
+    as_tibble() %>%
+    mutate(End = lag(Totpop),
+           xpos = 1:n()-0.5,
+           Diff = Totpop - Totpop[1],
+           Percent = paste(round(Diff/End*100,1),"%")) %>%
+     
     ggplot(aes(x=Contrast, y=Totpop, fill = Month, col = Month)) +
     geom_bar(stat="identity",
              position=position_dodge2(preserve = "single"),
@@ -644,11 +651,11 @@ if(length(dat19) == 1){
     mutate(Month = replace(as.character(Month), Contrast=='Pre-war', "Baseline")) %>%
     arrange(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
     mutate(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
-    # as_tibble() %>%
-    # mutate(End = lag(Totpop),
-    #        xpos = 1:n()-0.5,
-    #        Diff = Totpop - Totpop[1],
-    #        Percent = paste(round(Diff/End*100,1),"%")) %>%
+    as_tibble() %>%
+    mutate(End = lag(Totpop),
+           xpos = 1:n()-0.5,
+           Diff = Totpop - Totpop[1],
+           Percent = paste(round(Diff/End*100,1),"%")) %>%
     ggplot(aes(x=Contrast, y=Totpop, fill = Month, col = Month)) +
     geom_bar(stat="identity",
              position=position_dodge2(preserve = "single"),
