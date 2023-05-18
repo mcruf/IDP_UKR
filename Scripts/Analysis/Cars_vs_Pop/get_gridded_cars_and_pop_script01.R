@@ -185,10 +185,10 @@ imgpolyall <- do.call(what = sf:::rbind.sf, args=imgpoly2)
 # 1.3) Load worldpop raster
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~
 if(DINPUT == "Count"){
-  #worldpop <- raster("GIS/Population/WorldPop/Shapefile/Numbers/Unconstrained/100m_resoultion/ukr_ppp_2020_UNadj.tif") # 100m resolution
-  worldpop <- raster("GIS/Population/WorldPop/Shapefile/Numbers/Constrained/v2/100m/ukr_pop_2020_100m_constrained_v2.tif") # 100m resolution
+  #worldpop <- raster("GIS/Population/WorldPop/Shapefile/Numbers/Constrained/v2/100m/ukr_pop_2020_100m_constrained_v2.tif") # 100m resolution
+  worldpop <- raster("GIS/Population/WorldPop/Shapefile/Numbers/Unconstrained/100m_resolution/ukr_ppp_2019_UNadj.tif") # 100m resolution
 } else if(DINPUT == "Density"){
-  worldpop <- raster("GIS/Population/WorldPop/Shapefile/Density/ukr_pd_2020_1km_UNadj.tif") # 1km resolution
+  worldpop <- raster("GIS/Population/WorldPop/Shapefile/Density/ukr_pd_2019_1km_UNadj.tif") # 1km resolution
 }
 
 
