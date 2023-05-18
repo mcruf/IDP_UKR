@@ -219,7 +219,7 @@ names(popcar_aggr_grid)[which(names(popcar_aggr_grid) == 'Bila_Tserkva')] <- 'Bi
 
 
 ## Select city of interest
-int <- cities[1]
+int <- cities[20]
 
 
 ## Filter data for given city
@@ -506,6 +506,7 @@ for(i in seq_along(dat19)){
 }
 baseline <- do.call('rbind', baseline)
 
+
 ### Get average baseline pop (when No. months > 1)
 #### Because grid area do not necessarily overlap between months of different years
 #### we have to calculate the average total population
@@ -547,6 +548,7 @@ Main_theme <- theme(axis.text.x = element_text(size = 38, face = 'bold'),
                     plot.margin = unit(c(t=1,b=0,r=0,l=2), "cm"))
 
 
+
 ### Now go for the final plot
 if(length(dat19) == 1){
   
@@ -562,7 +564,7 @@ if(length(dat19) == 1){
            xpos = 1:n()-0.5,
            Diff = Totpop - Totpop[1],
            Percent = paste(round(Diff/End*100,1),"%")) %>%
-    ggplot(aes(x=Contrast, y=Totpop, fill = Month, col = Month)) +
+    ggplot(aes(x=Contrast, y=Totpop, fill = Contrast, col = Contrast)) +
     geom_bar(stat="identity",
              #position=position_dodge(preserve = "single"),
              alpha = 0.5,
@@ -586,8 +588,8 @@ if(length(dat19) == 1){
                   hjust = ifelse(Diff[-1] < 0 , -0.1, 1.2), 
                   fontface = 2), size = 15, col = 'gray30') +
     
-    scale_fill_manual(name = "Contrast", values=c("cyan4","darkorange","darkorange")) +
-    scale_color_manual(name = "Contrast", values=c("cyan4", "darkorange", "darkorange")) +
+    scale_fill_manual(name = "Contrast", values=c("cyan4","darkorange")) +
+    scale_color_manual(name = "Contrast", values=c("cyan4", "darkorange")) +
     scale_y_continuous(labels = comma) +
     ylab('No. people') + xlab('') + ggtitle(int) +
     
@@ -610,7 +612,7 @@ if(length(dat19) == 1){
            Diff = Totpop - Totpop[1],
            Percent = paste(round(Diff/End*100,1),"%")) %>%
      
-    ggplot(aes(x=Contrast, y=Totpop, fill = Month, col = Month)) +
+    ggplot(aes(x=Contrast, y=Totpop, fill = Contrast, col = Contrast)) +
     geom_bar(stat="identity",
              position=position_dodge2(preserve = "single"),
              alpha = 0.5,
@@ -656,7 +658,7 @@ if(length(dat19) == 1){
            xpos = 1:n()-0.5,
            Diff = Totpop - Totpop[1],
            Percent = paste(round(Diff/End*100,1),"%")) %>%
-    ggplot(aes(x=Contrast, y=Totpop, fill = Month, col = Month)) +
+    ggplot(aes(x=Contrast, y=Totpop, fill = Contrast, col = Contrast)) +
     geom_bar(stat="identity",
              position=position_dodge2(preserve = "single"),
              alpha = 0.5,
