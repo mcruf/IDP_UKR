@@ -23,6 +23,8 @@ library(ggplot2)
 library(viridis)
 library(ggpubr)
 library(RColorBrewer)
+library(ggrepel)
+library(ggpattern)
 
 
 
@@ -160,9 +162,13 @@ cars$QuarterYear  <- factor(cars$QuarterYear,
 
 
 ## Set baseline, covid and war rectangles (to be used later in the plots)
-baseline <- data.frame(xmin=1, xmax=12, ymin=-Inf, ymax=Inf)
-covid <- data.frame(xmin=12, xmax=36, ymin=-Inf, ymax=Inf)
-war <- data.frame(xmin=36, xmax=45, ymin=-Inf, ymax=Inf)
+#baseline <- data.frame(xmin=1, xmax=12, ymin=-Inf, ymax=Inf)
+#covid <- data.frame(xmin=15, xmax=36, ymin=-Inf, ymax=Inf)
+#war <- data.frame(xmin=36, xmax=45, ymin=-Inf, ymax=Inf)
+
+baseline <- data.frame(xmin=1, xmax=15, ymin=-Inf, ymax=Inf) #Including first three months in 2020 (Covid was declared in March 2020)
+covid <- data.frame(xmin=15, xmax=38, ymin=-Inf, ymax=Inf)
+war <- data.frame(xmin=38, xmax=45, ymin=-Inf, ymax=Inf)
 
 
 
@@ -430,62 +436,6 @@ ggsave(OUT, dpi = 300, width = 35, height = 25, unit='cm')
 
 
 
-## Average car density per year (barplot)
-cars %>%
-  filter(Threshold == 'Th-45') %>%
-  #group_by(MonthYear, City, Threshold) %>%
-  group_by(Year,City, Threshold) %>%
-  summarize(Avg_cars = median(Dcars, na.rm=T),
-            sd = sd(Dcars, na.rm=T),
-            Region = paste(unique(Region))) %>%
-  
-  # Filter 5-top cities within each region
-  #filter(Region == 'West' & City %in% c('Chernivtsi','Ivano-Frankivsk', 'Lviv','Shehyni','Uzhhorod', 'Ternopil' )) %>%
-  #filter(Region == 'Central' & City %in% c('Kyiv','Odessa', 'Mykolaiv', 'Kherson', 'Chernihiv', 'Cherkasy')) %>%
-  #filter(Region == 'East'& City %in% c('Donetsk','Kharkiv','Luhansk','Mariupol','Alchevsk', 'Melitopol')) %>%
-  filter(City %in% c('Donetsk','Kharkiv','Mariupol')) %>% #Only use when aggregated on yearly level
-
-  
-  #ggplot(aes(x=MonthYear, y = Avg_cars, fill = Threshold)) +
-  ggplot(aes(x=Year, y = Avg_cars, fill = Threshold)) +
-  
-  geom_bar(stat="identity",
-           position="dodge", alpha = 0.8) +
-  geom_vline(xintercept = 38, color = "darkred", size=0.8) +
-  scale_x_discrete(drop=FALSE) +
-  
-  facet_wrap(City ~ ., scales = 'free_y', ncol = 2) +
-  #scale_color_manual(values=c("cyan4", "#E7B800")) +
-  #scale_color_manual(values=c("#1d72b4", "#e89d41")) +
-  scale_fill_manual(values=c("cyan4", "#e89d41")) +
-  #scale_color_hp(house = "LunaLovegood", discrete=T) + 
-  theme_bw() +
-  ylab('Avergage Car Density') +
-  theme(legend.position = 'top',
-        axis.text.x = element_text(size = 12),
-        axis.text.y = element_text(size = 12),
-        axis.title = element_text(size = 13, face='bold'),
-        strip.text =  element_text(size = 14, face = 'bold'))
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~
-## Check for statistical significance
-tmp <- filter(cars, City == 'Mariupol' & Threshold == 'Th-45')
-table(tmp$Year)
-
-res <- glm(Dcars ~ Year, data = tmp, family = gaussian)
-summary(res)
-#plot(res)
-
-# res2 <- aov(Dcars ~ Year, data = tmp)
-# tukey.test <- TukeyHSD(res2)
-#~~~~~~~~~~~~~~~~~~~~~~~
-
-
-
-
-
-
 #########
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -497,45 +447,72 @@ summary(res)
 #adm <- st_read("GIS/Administrative_divisions/Ukraine/Adm_1/KievOblast_dissolved/ukr_admbnda_adm1_sspe_20220114.shp") 
 adm <- st_read("GIS/Administrative_divisions/Ukraine/Adm_1/ukr_admbnda_adm1_sspe_20220114.shp") 
 
-adm <-  subset(adm, !ADM1_EN %in% c("Avtonomna Respublika Krym","Sevastopilska")) # Remove Sevastopol & Cri
-adm$ADM1_EN <- as.factor(adm$ADM1_EN)
-colnames(adm)[3] <- "Oblast"
-adm <- adm[,c('Oblast')]
+## Filter out Crimea and Sevastopol
+adm1 <-  subset(adm, !ADM1_EN %in% c("Avtonomna Respublika Krym","Sevastopilska")) # Remove Sevastopol & Cri
+adm1$ADM1_EN <- as.factor(adm1$ADM1_EN)
+colnames(adm1)[3] <- "Oblast"
+adm1 <- adm1[,c('Oblast')]
+
+### Standardize oblast names to match to the ones in the data
+levels(adm1$Oblast)[levels(adm1$Oblast) == "Cherkaska"] <- "Cherkasy"
+levels(adm1$Oblast)[levels(adm1$Oblast) == "Chernihivska"] <- "Chernihiv"
+levels(adm1$Oblast)[levels(adm1$Oblast) == "Chernivetska"] <- "Chernivtsi"
+levels(adm1$Oblast)[levels(adm1$Oblast) == "Dnipropetrovska"] <- "Dnipropetrovsk"
+levels(adm1$Oblast)[levels(adm1$Oblast) == "Donetska"] <- "Donetsk"
+levels(adm1$Oblast)[levels(adm1$Oblast) == "Ivano-Frankivska"] <- "Ivano-Frankivsk"
+levels(adm1$Oblast)[levels(adm1$Oblast) == "Kharkivska"] <- "Kharkiv"
+levels(adm1$Oblast)[levels(adm1$Oblast) == "Khersonska"] <- "Kherson"
+levels(adm1$Oblast)[levels(adm1$Oblast) == "Khmelnytska"] <- "Khmelnytskyy"
+levels(adm1$Oblast)[levels(adm1$Oblast) == "Kirovohradska"] <- "Kirovohrad"
+levels(adm1$Oblast)[levels(adm1$Oblast) == "Kyivska"] <- "Kiev"
+levels(adm1$Oblast)[levels(adm1$Oblast) == "Kyivska City"] <- "Kiev City"
+levels(adm1$Oblast)[levels(adm1$Oblast) == "Luhanska"] <- "Luhansk"
+levels(adm1$Oblast)[levels(adm1$Oblast) == "Lvivska"] <- "Lviv"
+levels(adm1$Oblast)[levels(adm1$Oblast) == "Mykolaivska"] <- "Mykolayiv"
+levels(adm1$Oblast)[levels(adm1$Oblast) == "Odeska"] <- "Odessa"
+levels(adm1$Oblast)[levels(adm1$Oblast) == "Poltavska"] <- "Poltava"
+levels(adm1$Oblast)[levels(adm1$Oblast) == "Rivnenska"] <- "Rivne"
+levels(adm1$Oblast)[levels(adm1$Oblast) == "Sumska"] <- "Sumy"
+levels(adm1$Oblast)[levels(adm1$Oblast) == "Ternopilska"] <- "Ternopil"
+levels(adm1$Oblast)[levels(adm1$Oblast) == "Vinnytska"] <- "Vinnytsia"
+levels(adm1$Oblast)[levels(adm1$Oblast) == "Volynska"] <- "Volyn"
+levels(adm1$Oblast)[levels(adm1$Oblast) == "Zakarpatska"] <- "Zakarpattia"
+levels(adm1$Oblast)[levels(adm1$Oblast) == "Zaporizka"] <- "Zaporizhzhya"
+levels(adm1$Oblast)[levels(adm1$Oblast) == "Zhytomyrska"] <- "Zhytomyr"
 
 
-## Standardize oblast names to match to the ones in the data
-levels(adm$Oblast)[levels(adm$Oblast) == "Cherkaska"] <- "Cherkasy"
-levels(adm$Oblast)[levels(adm$Oblast) == "Chernihivska"] <- "Chernihiv"
-levels(adm$Oblast)[levels(adm$Oblast) == "Chernivetska"] <- "Chernivtsi"
-levels(adm$Oblast)[levels(adm$Oblast) == "Dnipropetrovska"] <- "Dnipropetrovsk"
-levels(adm$Oblast)[levels(adm$Oblast) == "Donetska"] <- "Donetsk"
-levels(adm$Oblast)[levels(adm$Oblast) == "Ivano-Frankivska"] <- "Ivano-Frankivsk"
-levels(adm$Oblast)[levels(adm$Oblast) == "Kharkivska"] <- "Kharkiv"
-levels(adm$Oblast)[levels(adm$Oblast) == "Khersonska"] <- "Kherson"
-levels(adm$Oblast)[levels(adm$Oblast) == "Khmelnytska"] <- "Khmelnytskyy"
-levels(adm$Oblast)[levels(adm$Oblast) == "Kirovohradska"] <- "Kirovohrad"
-levels(adm$Oblast)[levels(adm$Oblast) == "Kyivska"] <- "Kiev"
-levels(adm$Oblast)[levels(adm$Oblast) == "Kyivska City"] <- "Kiev City"
-levels(adm$Oblast)[levels(adm$Oblast) == "Luhanska"] <- "Luhansk"
-levels(adm$Oblast)[levels(adm$Oblast) == "Lvivska"] <- "Lviv"
-levels(adm$Oblast)[levels(adm$Oblast) == "Mykolaivska"] <- "Mykolayiv"
-levels(adm$Oblast)[levels(adm$Oblast) == "Odeska"] <- "Odessa"
-levels(adm$Oblast)[levels(adm$Oblast) == "Poltavska"] <- "Poltava"
-levels(adm$Oblast)[levels(adm$Oblast) == "Rivnenska"] <- "Rivne"
-levels(adm$Oblast)[levels(adm$Oblast) == "Sumska"] <- "Sumy"
-levels(adm$Oblast)[levels(adm$Oblast) == "Ternopilska"] <- "Ternopil"
-levels(adm$Oblast)[levels(adm$Oblast) == "Vinnytska"] <- "Vinnytsia"
-levels(adm$Oblast)[levels(adm$Oblast) == "Volynska"] <- "Volyn"
-levels(adm$Oblast)[levels(adm$Oblast) == "Zakarpatska"] <- "Zakarpattia"
-levels(adm$Oblast)[levels(adm$Oblast) == "Zaporizka"] <- "Zaporizhzhya"
-levels(adm$Oblast)[levels(adm$Oblast) == "Zhytomyrska"] <- "Zhytomyr"
+
+
+
+## Keep Cimea and Sevastopol (For plotting purposes only)
+adm2 <-  subset(adm, ADM1_EN %in% c("Avtonomna Respublika Krym","Sevastopilska")) # Remove Sevastopol & Cri
+adm2$ADM1_EN <- as.factor(adm2$ADM1_EN)
+colnames(adm2)[3] <- "Oblast"
+adm2 <- adm2[,c('Oblast')]
+
+### Change naming for mapping
+levels(adm2$Oblast)[levels(adm2$Oblast) == "Avtonomna Respublika Krym"] <- "Crimea"
+levels(adm2$Oblast)[levels(adm2$Oblast) == "Sevastopilska"] <- "Sevastopol"
+
+
 
 
 
 #~~~~~~~~~~~~~~~~~#
 ### Yearly maps ###
 #~~~~~~~~~~~~~~~~~#
-cars2 <- filter(cars, Year %in% c('2019', '2022') & Threshold == 'Th-45') %>%
+
+## To calculate values during the war period, 
+## we have to remove the month of January and all
+## dates before 24 February (when war started)
+
+filter(cars, MonthYear == '2-2022' & Threshold == 'Th-45') %>% dplyr::select(Date) %>% table() #To see all dates in february 2022
+
+## Get average car density per Year & Oblast
+cars2 <- filter(cars, Year %in% c('2019', '2022') & 
+                  Threshold == 'Th-45' &
+                  !(MonthYear %in% c("1-2022")) & #Remove January 2022
+                  !(Date %in% c("feb_2022_04", "feb_2022_14", "feb_2022_15", "feb_2022_20", "feb_2022_21", "feb_2022_22"))) %>% ##Remove dates before 24. February
   group_by(Year, Oblast) %>%
   summarize(Dcar_min = min(Dcars), 
             Dcar_max = max(Dcars), 
@@ -543,6 +520,8 @@ cars2 <- filter(cars, Year %in% c('2019', '2022') & Threshold == 'Th-45') %>%
             Dcar_mean = mean(Dcars, na.rm=T),
             Dcar_sd = sd(Dcars, na.rm=T),
             nobs = n()) 
+
+
 
 
 cars_change <- cars2 %>%
@@ -554,7 +533,7 @@ cars_change <- cars2 %>%
   data.frame()
 
 
-## There are sometimes some oblasts which cannot be contrasted (missing data for either 2019 or 2022)
+## There are sometimes  oblasts which cannot be contrasted (missing data for either 2019 or 2022)
 ## We have do identify these oblasts and set to NA
 nocontrast = cars2 %>%
   arrange(Oblast, Year) %>%
@@ -566,7 +545,7 @@ nocontrast = cars2 %>%
   group_by(Oblast) %>%
   summarize(nrow = n()) %>%
   filter(nrow == 1) %>%
-  select(Oblast)
+  dplyr::select(Oblast)
 
 
 ## Now set these cases do NA
@@ -585,21 +564,24 @@ cars_change2$change_grouped <- cut(cars_change2$change_relative, brks,
 
 ## Merge the data to shapefile
 cars_change2$Oblast <- as.factor(cars_change2$Oblast)
-setdiff(cars_change2$Oblast, adm$Oblast)
+setdiff(cars_change2$Oblast, adm1$Oblast)
 
 cars_change2$geometry <- NULL
-cars_change2 <- merge(adm, cars_change2, by = 'Oblast')
+cars_change2 <- merge(adm1, cars_change2, by = 'Oblast')
 
 
 ## Now go for the plot
 #ncols <- length(brks)-1; mycolors <- colorRampPalette(brewer.pal(9, "RdYlBu"))(ncols) #Yellor-red
 
-adm_coords <- as.data.frame(st_coordinates(st_centroid(adm)))
-adm_coords$Oblast <- adm$Oblast
-library(ggrepel)
+adm_coords <- as.data.frame(st_coordinates(st_centroid(adm1)))
+adm_coords$Oblast <- adm1$Oblast
+
+adm2_coords <- as.data.frame(st_coordinates(st_centroid(adm2)))
+adm2_coords$Oblast <- adm2$Oblast
+
 
 map <- ggplot() +
-        geom_sf(data = st_geometry(adm), color = "white", fill = 'gray40', lwd=1) +
+        geom_sf(data = st_geometry(adm1), color = "white", fill = 'gray40', lwd=1) +
         geom_sf(data=cars_change2, aes(fill = change_grouped ), color = "white", lwd = 1) +
        # geom_sf(data = st_geometry(adm), color = "white", fill = 'transparent') +
         geom_text_repel(data = adm_coords, aes(X, Y, label = Oblast), 
@@ -612,6 +594,22 @@ map <- ggplot() +
                         #nudge_x = 0.2,
                         #nudge_y = 0.2,
                         force = 1) +
+  
+        ## Sevastopol & Crimea
+        geom_sf_pattern(data = adm2, pattern = "stripe", fill = "white", col = "gray70", 
+                        lwd = 0.2, pattern_density = 0.2, pattern_spacing = 0.01,
+                        pattern_colour  = 'gray70') + 
+        geom_text_repel(data = adm2_coords, aes(X, Y, label = Oblast), 
+                        size = 10,
+                        colour = "gray30", 
+                        bg.color = "white",
+                        bg.r = 0.15,
+                        hjust = 1,
+                        vjust = 0.7,
+                        #nudge_x = 0.2,
+                        #nudge_y = 0.2,
+                        force = 1) +
+        
         #scale_fill_brewer(palette = "BrBG") +
         #scale_fill_brewer(palette = "RdYlBu") +
         scale_fill_brewer(palette = "RdBu", guide = guide_legend(reverse=TRUE)) +
@@ -622,8 +620,8 @@ map <- ggplot() +
         #scale_fill_hp(discrete = TRUE, option = "NewtScamander", direction = -1) +
         theme_minimal() +
         labs(fill='Relative change (%)') +  
-        theme(axis.text.y = element_text(size = 24),
-              axis.text.x = element_text(size = 24),
+        theme(axis.text.y = element_text(size = 26),
+              axis.text.x = element_text(size = 26),
               axis.title = element_blank(),
               legend.title = element_text(hjust = 0.5, size=28, face="bold"),
               legend.text = element_text(size = 26),
@@ -636,7 +634,7 @@ ggsave('~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/Manuscript/Fi
 
 
 ## Same info in barplot
-display.brewer.pal(9, 'RdBu')
+#display.brewer.pal(9, 'RdBu')
 brewer.pal(9, 'RdBu')
 
 cars_change2$Direction <- as.factor(ifelse(cars_change2$change_relative > 0, 'Increase', 'Decrease'))
@@ -646,7 +644,7 @@ barplot <- cars_change2  %>%
             ggbarplot(y = "change_relative", x = "Oblast",
                       fill = "Direction",           # change fill color by mpg_level
                       color = "white",            # Set bar border colors to white
-                      #palette = "jco",            # jco journal color palett. see ?ggpar
+                      #palette = "jco",            # jco journal color palette. see ?ggpar
                       palette = c('#B2182B','#2166AC'),
                       alpha = 0.8,
                       sort.val = "desc",          # Sort the value in descending order
@@ -682,7 +680,18 @@ ggsave('~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/Manuscript/Fi
 ### Quarterly maps ###
 #~~~~~~~~~~~~~~~~~~~~#
 
-cars2 <- filter(cars, Year %in% c('2019', '2022') & Threshold == 'Th-45') %>%
+## To calculate values during the war period, 
+## we have to remove the month of January and all
+## dates before 24 February (when war started)
+
+filter(cars, MonthYear == '2-2022' & Threshold == 'Th-45') %>% dplyr::select(Date) %>% table() #To see all dates in february 2022
+
+## Get average car density per Quarter-Year & Oblast
+
+cars2 <- filter(cars, Year %in% c('2019', '2022') & 
+                      Threshold == 'Th-45' &
+                        !(MonthYear %in% c("1-2022")) & #Remove January 2022
+                        !(Date %in% c("feb_2022_04", "feb_2022_14", "feb_2022_15", "feb_2022_20", "feb_2022_21", "feb_2022_22"))) %>% ##Remove dates before 24. February
   group_by(Year, Quarter, Oblast) %>%
   summarize(Dcar_min = min(Dcars), 
             Dcar_max = max(Dcars), 
@@ -727,7 +736,7 @@ for(i in 1:nquarter){
     group_by(Oblast) %>%
     summarize(nrow = n()) %>%
     filter(nrow == 1) %>%
-    select(Oblast)
+    dplyr::select(Oblast)
   
 }
 
@@ -748,7 +757,7 @@ cars_change2$change_relative <- 100 * cars_change2$change_relative #To get value
 
 ## Grouping on a yearly basis
 brks <- cartography::getBreaks(cars_change2$change_relative, method = "quantile", nclass = 9) # When on a yearly basis
-
+#brks <- quantile(cars_change2$change_relative, probs = seq(0, 1, by = .1))
 
 cars_change2$change_grouped <- cut(cars_change2$change_relative, brks,
                                    # labels = c("0-20%", "20-40%", "40-60%", "60-80%", "80-100%"),
@@ -758,9 +767,9 @@ cars_change2$change_grouped <- cut(cars_change2$change_relative, brks,
 
 ## Standardize oblast names
 cars_change2$Oblast <- as.factor(cars_change2$Oblast)
-setdiff(cars_change2$Oblast, adm$Oblast)
+setdiff(cars_change2$Oblast, adm1$Oblast)
 cars_change2$geometry <- NULL
-cars_change2 <- merge(adm, cars_change2, by = 'Oblast')
+cars_change2 <- merge(adm1, cars_change2, by = 'Oblast')
 
 
 ## Now go for the plot
@@ -769,7 +778,7 @@ cars_change2 <- merge(adm, cars_change2, by = 'Oblast')
 
 ## Vinnytsia values for Q1 are strange -- remove those for plotting
 map2 <- ggplot() +
-        geom_sf(data = st_geometry(adm), color = "white",  fill = 'gray40', lwd= 1) +
+        geom_sf(data = st_geometry(adm1), color = "white",  fill = 'gray40', lwd= 1) +
         geom_sf(data=cars_change2, aes(fill = change_grouped), color = "white",  lwd = 1) +
         scale_fill_brewer(palette = "RdBu", guide = guide_legend(reverse=TRUE)) +
         # geom_text_repel(data = adm_coords, aes(X, Y, label = Oblast), 
@@ -782,6 +791,11 @@ map2 <- ggplot() +
         #                 #nudge_x = 0.2,
         #                 #nudge_y = 0.2,
         #                 force = 1) +
+  
+        ## Sevastopol & Crimea
+        geom_sf_pattern(data = adm2, pattern = "stripe", fill = "white", col = "gray70", 
+                        lwd = 0.2, pattern_density = 0.2, pattern_spacing = 0.01,
+                        pattern_colour  = 'gray70') + 
         theme_minimal() +
         labs(fill='Relative change') +  
         facet_wrap(Quarter ~ ., labeller = as_labeller(c('1' = 'Quarter 1','2' = 'Quarter 2', '3' = 'Quarter 3'))) +
@@ -967,3 +981,66 @@ ggsave('~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/Manuscript/Fi
 # 
 # 
 # 
+
+
+
+
+########################################
+
+### Additional stuff
+## Average car density per year (barplot)
+
+
+# cars %>%
+#   filter(Threshold == 'Th-45') %>%
+#   #group_by(MonthYear, City, Threshold) %>%
+#   group_by(Year,City, Threshold) %>%
+#   summarize(Avg_cars = median(Dcars, na.rm=T),
+#             sd = sd(Dcars, na.rm=T),
+#             Region = paste(unique(Region))) %>%
+#   
+#   # Filter 5-top cities within each region
+#   #filter(Region == 'West' & City %in% c('Chernivtsi','Ivano-Frankivsk', 'Lviv','Shehyni','Uzhhorod', 'Ternopil' )) %>%
+#   #filter(Region == 'Central' & City %in% c('Kyiv','Odessa', 'Mykolaiv', 'Kherson', 'Chernihiv', 'Cherkasy')) %>%
+#   #filter(Region == 'East'& City %in% c('Donetsk','Kharkiv','Luhansk','Mariupol','Alchevsk', 'Melitopol')) %>%
+#   filter(City %in% c('Donetsk','Kharkiv','Mariupol')) %>% #Only use when aggregated on yearly level
+#   
+#   
+#   #ggplot(aes(x=MonthYear, y = Avg_cars, fill = Threshold)) +
+#   ggplot(aes(x=Year, y = Avg_cars, fill = Threshold)) +
+#   
+#   geom_bar(stat="identity",
+#            position="dodge", alpha = 0.8) +
+#   geom_vline(xintercept = 38, color = "darkred", size=0.8) +
+#   scale_x_discrete(drop=FALSE) +
+#   
+#   facet_wrap(City ~ ., scales = 'free_y', ncol = 2) +
+#   #scale_color_manual(values=c("cyan4", "#E7B800")) +
+#   #scale_color_manual(values=c("#1d72b4", "#e89d41")) +
+#   scale_fill_manual(values=c("cyan4", "#e89d41")) +
+#   #scale_color_hp(house = "LunaLovegood", discrete=T) + 
+#   theme_bw() +
+#   ylab('Avergage Car Density') +
+#   theme(legend.position = 'top',
+#         axis.text.x = element_text(size = 12),
+#         axis.text.y = element_text(size = 12),
+#         axis.title = element_text(size = 13, face='bold'),
+#         strip.text =  element_text(size = 14, face = 'bold'))
+# 
+# 
+# #~~~~~~~~~~~~~~~~~~~~~~~
+# ## Check for statistical significance
+# tmp <- filter(cars, City == 'Mariupol' & Threshold == 'Th-45')
+# table(tmp$Year)
+# 
+# res <- glm(Dcars ~ Year, data = tmp, family = gaussian)
+# summary(res)
+# #plot(res)
+# 
+# # res2 <- aov(Dcars ~ Year, data = tmp)
+# # tukey.test <- TukeyHSD(res2)
+# #~~~~~~~~~~~~~~~~~~~~~~~
+# 
+
+
+
