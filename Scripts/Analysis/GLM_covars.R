@@ -6,6 +6,15 @@
 
 
 
+## The following code conducts two types of analysis/figures:
+## 1) Plots of car density as a function of imagery features.
+## 2) GLM analysis to evaluate the effect of imagery-related features on car density
+
+## Code written by: Marie-Christine Rufener < macrufener@gmail.com > 
+## Last update: May 2023
+
+
+#><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
 #~~~~~~~~~~~~~~~~
 # Load libraries
@@ -103,51 +112,92 @@ cars$Dcars <- cars$Ncars / cars$AOI_area_covered_sqkm
 
 ## Image resolution
 res <- cars %>%
-        ggplot(aes(x=Image_resolution, y = Dcars)) +
-        geom_boxplot(fill = 'cyan4', alpha = 0.7) +
-        theme_bw() +
-        ylab(expression(bold(paste("Car Density (No. cars/km" ^ "2", ")")))) +
-        xlab('Image resolution (m)') +
-        geom_text(data=data.frame(), aes(label = '(a)', x = -Inf, y = Inf),
-                  hjust = 0, vjust = 1, fontface = 'bold', size = 5) +
-        #stat_summary(fun=mean, geom="point", shape=17, size=3, col = 'black') +
-        theme(axis.title.y  = element_text(size = 13, face = 'bold', margin = unit(c(0, 3, 0, 0), "mm")), 
-              axis.title.x = element_text(size = 13, face = 'bold', margin = unit(c(3, 0, 0, 0), "mm")), 
-              plot.margin = margin(t=0, r=0, b=1.5, l=0, "cm"),
-              axis.text = element_text(size = 12, face = 'bold'),
-              panel.border =  element_blank(),
-              #panel.grid.major = element_line(colour = grey(0.4),linetype = 3 ),
-              strip.background = element_blank(),
-              #axis.line = element_line(color = 'black'),
-              legend.position = "none")
+  ggplot(aes(x=Image_resolution, y = Dcars)) +
+  geom_jitter(width=0.15, alpha=0.5, col = 'cyan4', size = 3) +
+  geom_boxplot(outlier.shape = NA, width=0.5, fill = NA, col = 'gray30', lwd = 0.8) +
+  theme_bw() +
+  ylab(expression(bold(paste("Car Density (No. cars/km" ^ "2", ")")))) +
+  xlab('Image resolution (m)') +
+  geom_text(data=data.frame(), aes(label = '(a)', x = -Inf, y = Inf),
+            hjust = 0, vjust = 1, fontface = 'bold', size = 5) +
+  #stat_summary(fun=mean, geom="point", shape=17, size=3, col = 'black') +
+  theme(axis.title.y  = element_text(size = 13, face = 'bold', margin = unit(c(0, 3, 0, 0), "mm")), 
+        axis.title.x = element_text(size = 13, face = 'bold', margin = unit(c(3, 0, 0, 0), "mm")), 
+        plot.margin = margin(t=0, r=0, b=1.5, l=0, "cm"),
+        axis.text = element_text(size = 12, face = 'bold'),
+        panel.border =  element_blank(),
+        #panel.grid.major = element_line(colour = grey(0.4),linetype = 3 ),
+        strip.background = element_blank(),
+        #axis.line = element_line(color = 'black'),
+        legend.position = "none")
+
+# res <- cars %>%
+#         ggplot(aes(x=Image_resolution, y = Dcars)) +
+#         geom_boxplot(fill = 'cyan4', alpha = 0.7) +
+#         theme_bw() +
+#         ylab(expression(bold(paste("Car Density (No. cars/km" ^ "2", ")")))) +
+#         xlab('Image resolution (m)') +
+#         geom_text(data=data.frame(), aes(label = '(a)', x = -Inf, y = Inf),
+#                   hjust = 0, vjust = 1, fontface = 'bold', size = 5) +
+#         #stat_summary(fun=mean, geom="point", shape=17, size=3, col = 'black') +
+#         theme(axis.title.y  = element_text(size = 13, face = 'bold', margin = unit(c(0, 3, 0, 0), "mm")), 
+#               axis.title.x = element_text(size = 13, face = 'bold', margin = unit(c(3, 0, 0, 0), "mm")), 
+#               plot.margin = margin(t=0, r=0, b=1.5, l=0, "cm"),
+#               axis.text = element_text(size = 12, face = 'bold'),
+#               panel.border =  element_blank(),
+#               #panel.grid.major = element_line(colour = grey(0.4),linetype = 3 ),
+#               strip.background = element_blank(),
+#               #axis.line = element_line(color = 'black'),
+#               legend.position = "none")
 
 
 ## Snow
 snow <- cars %>%
   ggplot(aes(x=Snow_presence, y = Dcars)) +
-  geom_boxplot(fill = 'cyan4', alpha = 0.7) +
+  geom_jitter(width=0.15, alpha=0.5, col = 'cyan4', size = 3) +
+  geom_boxplot(outlier.shape = NA, width=0.5, fill = NA, col = 'gray30', lwd = 0.8) +
   theme_bw() +
   ylab(expression(bold(paste("Car Density (No. cars/km" ^ "2", ")")))) +
-  xlab('Snow presence') +
-  #stat_summary(fun=mean, geom="point", shape=17, size=3, col = 'black') +
-  geom_text(data=data.frame(), aes(label = '(b)', x = -Inf, y = Inf),
+  xlab('Image resolution (m)') +
+  geom_text(data=data.frame(), aes(label = '(a)', x = -Inf, y = Inf),
             hjust = 0, vjust = 1, fontface = 'bold', size = 5) +
+  #stat_summary(fun=mean, geom="point", shape=17, size=3, col = 'black') +
   theme(axis.title.y  = element_text(size = 13, face = 'bold', margin = unit(c(0, 3, 0, 0), "mm")), 
         axis.title.x = element_text(size = 13, face = 'bold', margin = unit(c(3, 0, 0, 0), "mm")), 
         plot.margin = margin(t=0, r=0, b=1.5, l=0, "cm"),
         axis.text = element_text(size = 12, face = 'bold'),
-        panel.border = element_blank(),
+        panel.border =  element_blank(),
         #panel.grid.major = element_line(colour = grey(0.4),linetype = 3 ),
         strip.background = element_blank(),
         #axis.line = element_line(color = 'black'),
         legend.position = "none")
 
 
+# snow <- cars %>%
+#   ggplot(aes(x=Snow_presence, y = Dcars)) +
+#   geom_boxplot(fill = 'cyan4', alpha = 0.7) +
+#   theme_bw() +
+#   ylab(expression(bold(paste("Car Density (No. cars/km" ^ "2", ")")))) +
+#   xlab('Snow presence') +
+#   #stat_summary(fun=mean, geom="point", shape=17, size=3, col = 'black') +
+#   geom_text(data=data.frame(), aes(label = '(b)', x = -Inf, y = Inf),
+#             hjust = 0, vjust = 1, fontface = 'bold', size = 5) +
+#   theme(axis.title.y  = element_text(size = 13, face = 'bold', margin = unit(c(0, 3, 0, 0), "mm")), 
+#         axis.title.x = element_text(size = 13, face = 'bold', margin = unit(c(3, 0, 0, 0), "mm")), 
+#         plot.margin = margin(t=0, r=0, b=1.5, l=0, "cm"),
+#         axis.text = element_text(size = 12, face = 'bold'),
+#         panel.border = element_blank(),
+#         #panel.grid.major = element_line(colour = grey(0.4),linetype = 3 ),
+#         strip.background = element_blank(),
+#         #axis.line = element_line(color = 'black'),
+#         legend.position = "none")
+
+
 
 ## off-Nadir
 nadir <- cars %>%
   ggplot(aes(x=offNadirAngle, y = Dcars)) +
-  geom_point(col = 'cyan4', alpha = 0.7, size = 3) +
+  geom_point(col = 'cyan4', alpha = 0.5, size = 3) +
   theme_bw() +
   ylab(expression(bold(paste("Car Density (No. cars/km" ^ "2", ")")))) +
   xlab('Off-Nadir (°)') +
@@ -168,7 +218,7 @@ nadir <- cars %>%
 ## sun elevation
 sun <- cars %>%
   ggplot(aes(x=sunElevation, y = Dcars)) +
-  geom_point(col = 'cyan4', alpha = 0.7, size = 3) +
+  geom_point(col = 'cyan4', alpha = 0.5, size = 3) +
   theme_bw() +
   ylab(expression(bold(paste("Car Density (No. cars/km" ^ "2", ")")))) +
   xlab('Sun elevation (°)') +
@@ -191,7 +241,7 @@ sun <- cars %>%
 cloud <- cars %>%
   filter(cloudCover < 0.48) %>%
   ggplot(aes(x=cloudCover, y = Dcars)) +
-  geom_point(col = 'cyan4', alpha = 0.7, size = 3) +
+  geom_point(col = 'cyan4', alpha = 0.5, size = 3) +
   theme_bw() +
   ylab(expression(bold(paste("Car Density (No. cars/km" ^ "2", ")")))) +
   xlab('Cloud coverage (%)') +
