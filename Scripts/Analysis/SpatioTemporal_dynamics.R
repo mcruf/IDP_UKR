@@ -314,12 +314,13 @@ cit <- c('Chernivtsi', 'Ivano-Frankivsk', 'Uzhhorod',
 #          'Sumy',
 #          'Zaporizhzhia')
 
-
-
 tmp %>%
   filter(City %in% cit) %>%
   ggplot(aes(x=MonthYear, y = Avg_cars, group = Threshold)) +
   scale_x_discrete(drop=FALSE, labels = everysecond(colorder)) +
+  scale_y_continuous(limit=c(0,NA),oob=squish, expand = expansion(mult = c(0, 0.1))) + 
+  
+  geom_smooth(col = 'gray40') +
   
   geom_rect(data=baseline, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, fill="Before war"),
             #fill="cyan4",
@@ -336,10 +337,11 @@ tmp %>%
             alpha=0.4,
             inherit.aes = FALSE) +
   
-  geom_line(size =1, aes(), col = 'cyan4') +
-  geom_point(size = 3, aes(), shape = 21, fill = 'cyan4', col ='gray20') +
+  #geom_line(size =1, aes(), col = 'cyan4') +
+  geom_vline(aes(xintercept = 38, color = "Start of the War"), size=0.8) +
   
-  geom_vline(aes(xintercept = 38, color = "Start of War"), size=0.8) +
+  geom_bar(stat = "identity",  position = "stack",fill = 'mistyrose4', col ='gray30', alpha = 0.7) +
+  
   
   facet_wrap(factor(City, levels = cit) ~ ., scales = 'free_y', ncol = 3) + #For main plot
   #facet_wrap(factor(City, levels = cit) ~ ., scales = 'free_y', ncol = 2) + #For supplementary plot
@@ -353,7 +355,7 @@ tmp %>%
   
   scale_color_manual(name = "", 
                      values = c("darkred"))+
-
+  
   theme(legend.position = 'bottom',
         #legend.spacing.x = unit(0.2, "cm"),
         legend.margin = margin(0.5,0,0,-0.5, unit="cm"),
@@ -369,12 +371,125 @@ tmp %>%
         strip.text =  element_text(size = 15, face = 'bold'),
         strip.background = element_blank())
 
+## Area plot
+# tmp %>%
+#   filter(City %in% cit) %>%
+#   ggplot(aes(x=MonthYear, y = Avg_cars, group = Threshold)) +
+#   scale_x_discrete(drop=FALSE, labels = everysecond(colorder)) +
+#   scale_y_continuous(limit=c(0,NA),oob=squish, expand = expansion(mult = c(0, 0.1))) + 
+#   
+#   geom_rect(data=baseline, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, fill="Before war"),
+#             #fill="cyan4",
+#             alpha=0.4,
+#             inherit.aes = FALSE) +
+#   
+#   geom_rect(data=covid, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, fill="COVID-19 pandemic"),
+#             #fill="grey70",
+#             alpha=0.4,
+#             inherit.aes = FALSE) +
+#   
+#   geom_rect(data=war, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, fill="War"),
+#             #fill="darkorange",
+#             alpha=0.4,
+#             inherit.aes = FALSE) +
+#   
+#   #geom_line(size =1, aes(), col = 'cyan4') +
+#   #geom_bar(stat = "identity",  position = "stack",fill = 'cyan4', col ='gray20') +
+#   geom_area(alpha = 0.5, color = 'gray40', fill = 'mistyrose4') +
+#   #geom_point(alpha = 0.5, size = 2, shape = 21, fill = 'cyan4', col ='gray20') +
+#   geom_point(alpha = 0.5, size = 2, shape = 21, fill = 'mistyrose4', col ='gray40') +
+#   
+#   geom_vline(aes(xintercept = 38, color = "Start of War"), size=0.8) +
+#   
+#   facet_wrap(factor(City, levels = cit) ~ ., scales = 'free_y', ncol = 3) + #For main plot
+#   #facet_wrap(factor(City, levels = cit) ~ ., scales = 'free_y', ncol = 2) + #For supplementary plot
+#   
+#   theme_bw() +
+#   ylab(expression(bold(paste("Avergage Car Density (No. cars/km" ^ "2", ")")))) +
+#   xlab('Time') +
+#   scale_fill_manual('Period',
+#                     values = c('cyan4','grey70','darkorange'),  
+#                     guide = guide_legend(override.aes = list(alpha = c(rep(0.4,3))))) +
+#   
+#   scale_color_manual(name = "", 
+#                      values = c("darkred"))+
+#   
+#   theme(legend.position = 'bottom',
+#         #legend.spacing.x = unit(0.2, "cm"),
+#         legend.margin = margin(0.5,0,0,-0.5, unit="cm"),
+#         legend.title.align = 0.5,
+#         legend.text = element_text(size = 16),
+#         legend.title = element_text(size = 18, face ='bold'),
+#         
+#         axis.text.x = element_text(angle = 90,size = 14, vjust = 0.5),
+#         axis.text.y = element_text(size = 16),
+#         
+#         axis.title.x = element_text(size = 18, face='bold', margin = unit(c(3, 0, 0, 0), "mm")),
+#         axis.title.y = element_text(size = 18, face='bold', margin = unit(c(0, 3, 0, 0), "mm")),
+#         strip.text =  element_text(size = 15, face = 'bold'),
+#         strip.background = element_blank())
+
+
+## Line plot
+# tmp %>%
+#   filter(City %in% cit) %>%
+#   ggplot(aes(x=MonthYear, y = Avg_cars, group = Threshold)) +
+#   scale_x_discrete(drop=FALSE, labels = everysecond(colorder)) +
+#   
+#   geom_rect(data=baseline, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, fill="Before war"),
+#             #fill="cyan4",
+#             alpha=0.4,
+#             inherit.aes = FALSE) +
+#   
+#   geom_rect(data=covid, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, fill="COVID-19 pandemic"),
+#             #fill="grey70",
+#             alpha=0.4,
+#             inherit.aes = FALSE) +
+#   
+#   geom_rect(data=war, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, fill="War"),
+#             #fill="darkorange",
+#             alpha=0.4,
+#             inherit.aes = FALSE) +
+#   
+#   geom_line(size =1, aes(), col = 'cyan4') +
+#   geom_point(size = 3, aes(), shape = 21, fill = 'cyan4', col ='gray20') +
+#   
+#   geom_vline(aes(xintercept = 38, color = "Start of the War"), size=0.8) +
+#   
+#   facet_wrap(factor(City, levels = cit) ~ ., scales = 'free_y', ncol = 3) + #For main plot
+#   #facet_wrap(factor(City, levels = cit) ~ ., scales = 'free_y', ncol = 2) + #For supplementary plot
+#   
+#   theme_bw() +
+#   ylab(expression(bold(paste("Avergage Car Density (No. cars/km" ^ "2", ")")))) +
+#   xlab('Time') +
+#   scale_fill_manual('Period',
+#                     values = c('cyan4','grey70','darkorange'),  
+#                     guide = guide_legend(override.aes = list(alpha = c(rep(0.4,3))))) +
+#   
+#   scale_color_manual(name = "", 
+#                      values = c("darkred"))+
+# 
+#   theme(legend.position = 'bottom',
+#         #legend.spacing.x = unit(0.2, "cm"),
+#         legend.margin = margin(0.5,0,0,-0.5, unit="cm"),
+#         legend.title.align = 0.5,
+#         legend.text = element_text(size = 16),
+#         legend.title = element_text(size = 18, face ='bold'),
+#         
+#         axis.text.x = element_text(angle = 90,size = 14, vjust = 0.5),
+#         axis.text.y = element_text(size = 16),
+#         
+#         axis.title.x = element_text(size = 18, face='bold', margin = unit(c(3, 0, 0, 0), "mm")),
+#         axis.title.y = element_text(size = 18, face='bold', margin = unit(c(0, 3, 0, 0), "mm")),
+#         strip.text =  element_text(size = 15, face = 'bold'),
+#         strip.background = element_blank())
+
 setwd('~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/Manuscript/Figures/Temporal_dynamics/')
 OUT <- paste('cardyn_time_main_plot', '.jpg', sep='')
 ggsave(OUT, dpi = 300, width = 35, height = 25, unit='cm')
 
 ## For Figures in the Supplementary material
-# OUT <- paste('cardyn_time_Suppl_east', '.jpg', sep='')
+# OUT <- paste('cardyn_time_Suppl_west_updated', '.jpg', sep='')
 # ggsave(OUT, dpi = 300, width = 35, height = 40, unit='cm')
 
 
