@@ -754,34 +754,64 @@ brewer.pal(9, 'RdBu')
 
 cars_change2$Direction <- as.factor(ifelse(cars_change2$change_relative > 0, 'Increase', 'Decrease'))
 
-barplot <- cars_change2  %>% 
-           st_drop_geometry() %>%
-            ggbarplot(y = "change_relative", x = "Oblast",
-                      fill = "Direction",           # change fill color by mpg_level
-                      color = "white",            # Set bar border colors to white
-                      #palette = "jco",            # jco journal color palette. see ?ggpar
-                      palette = c('#B2182B','#2166AC'),
-                      alpha = 0.8,
-                      sort.val = "desc",          # Sort the value in descending order
-                      sort.by.groups = FALSE,     # Don't sort inside each group
-                      #x.text.angle = 90,          # Rotate vertically x axis texts
-                      xlab = "Oblast",
-                      ylab = 'Relative change (%)',
-                      legend.title = "Car density",
-                      rotate = T,
-                      ggtheme = theme_minimal()
-            ) +
-              #scale_y_continuous(breaks = c(seq(from = -100, to = 600, by = 100))) +
-              scale_y_continuous(breaks = c(-100, 0, 200, 400, 600)) +
-  
-              geom_hline(yintercept = 0, linetype = 2, color = "gray30", lwd = 1.5) +
-              theme(legend.position = c(0.75, 0.91),
-                    plot.margin = unit(c(t=0,r=3,b=0,l=0), "cm"),
-                    legend.background = element_rect(fill = "white", color = "white"),
-                    legend.text = element_text(size = 32),
-                    legend.title = element_text(size = 34),
-                    axis.text = element_text(size = 34, face = 'bold'),
-                    axis.title = element_text(size = 36, face = 'bold'))
+# barplot <- cars_change2  %>% 
+#            st_drop_geometry() %>%
+#             ggbarplot(y = "change_relative", x = "Oblast",
+#                       fill = "Direction",           # change fill color by mpg_level
+#                       color = "white",            # Set bar border colors to white
+#                       #palette = "jco",            # jco journal color palette. see ?ggpar
+#                       palette = c('#B2182B','#2166AC'),
+# 
+#                       alpha = 0.8,
+#                       sort.val = "desc",          # Sort the value in descending order
+#                       sort.by.groups = FALSE,     # Don't sort inside each group
+#                       #x.text.angle = 90,          # Rotate vertically x axis texts
+#                       xlab = "Oblast",
+#                       ylab = 'Relative change (%)',
+#                       legend.title = "Car density",
+#                       rotate = T,
+#                       ggtheme = theme_minimal()
+#             ) +
+#               #scale_y_continuous(breaks = c(seq(from = -100, to = 600, by = 100))) +
+#               scale_y_continuous(breaks = c(-100, 0, 200, 400, 600)) +
+#   
+#               geom_hline(yintercept = 0, linetype = 2, color = "gray30", lwd = 1.5) +
+#               theme(legend.position = c(0.75, 0.91),
+#                     plot.margin = unit(c(t=0,r=3,b=0,l=0), "cm"),
+#                     legend.background = element_rect(fill = "white", color = "white"),
+#                     legend.text = element_text(size = 32),
+#                     legend.title = element_text(size = 34),
+#                     axis.text = element_text(size = 34, face = 'bold'),
+#                     axis.title = element_text(size = 36, face = 'bold'))
+
+#cars_change3 <- cars_change2
+cars_change2$Oblast <- factor(cars_change2$Oblast, cars_change2$Oblast[order(-cars_change2$change_relative)]) # reorder factors
+
+cars_change2  %>% 
+  ggplot(aes(x = Oblast, y = change_relative)) +
+  geom_bar(stat = "identity",  aes(fill = change_grouped, col=Direction), 
+           show_guide = T) +
+  coord_flip() + 
+  theme_minimal() +
+  scale_fill_manual(values = colorRampPalette(brewer.pal(9,"RdBu"))(9),
+                    guide = guide_legend(reverse=TRUE)) +
+  scale_color_manual(name = "Car density", values = c(rep('gray30',2)),
+                     guide = guide_legend(override.aes=list(fill=c('#B2182B','#2166AC'),
+                                                            linetype = c(1, 1)))) +
+  scale_y_continuous(breaks = c(-100, 0, 200, 400, 800)) +
+  xlab("Oblast") +
+  ylab('Relative change (%)') +
+  guides(fill = 'none') +
+  geom_hline(yintercept = 0, linetype = 2, color = "gray30", lwd = 1.5) +
+  theme(legend.position = c(0.75, 0.91),
+        plot.margin = unit(c(t=0,r=3,b=0,l=0), "cm"),
+        legend.background = element_rect(fill = "white", color = "white"),
+        legend.text = element_text(size = 32),
+        legend.title = element_text(size = 34),
+        axis.text = element_text(size = 34, face = 'bold'),
+        axis.title = element_text(size = 36, face = 'bold'))
+
+
 
 ggsave('~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/Manuscript/Figures/Spatial_dynamics/Relative_change_barplot_year.jpg',
        dpi=300, width = 30, height = 40, units = 'cm', bg = "white")
