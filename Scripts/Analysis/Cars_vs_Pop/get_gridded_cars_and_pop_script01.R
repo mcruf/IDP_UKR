@@ -150,7 +150,7 @@ for(i in seq_along(imgpoly)){
 }
 
 
-## Combine polygons of stiched images into multipolygon category
+## Combine polygons of stitched images into multipolygon category
 imgpoly2 <- list() #Make empty list to store results
 fname <- strsplit(fp2, "/") #Split partial path names to retrieve city-date in forloop
 
@@ -186,7 +186,7 @@ imgpolyall <- do.call(what = sf:::rbind.sf, args=imgpoly2)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~
 if(DINPUT == "Count"){
   #worldpop <- raster("GIS/Population/WorldPop/Shapefile/Numbers/Constrained/v2/100m/ukr_pop_2020_100m_constrained_v2.tif") # 100m resolution
-  worldpop <- raster("GIS/Population/WorldPop/Shapefile/Numbers/Unconstrained/100m_resolution/ukr_ppp_2019_UNadj.tif") # 100m resolution
+  worldpop <- raster("GIS/Population/WorldPop/Shapefile/Numbers/Uncontrained/100m_resolution/ukr_ppp_2019_UNadj.tif") # 100m resolution
 } else if(DINPUT == "Density"){
   worldpop <- raster("GIS/Population/WorldPop/Shapefile/Density/ukr_pd_2019_1km_UNadj.tif") # 1km resolution
 }
@@ -379,7 +379,7 @@ setdiff(names(spgrid_aoi), unique(imgpolyall$City)) # Sanity check
 spgrid_img <- list() # Make empty list to store the results
 
 
-## Intersect City-specific grid to city-specifc image
+## Intersect City-specific grid to city-specific image
 for(i in 1:nrow(imgpolyall)){
   
   ## Get input city
@@ -435,7 +435,8 @@ spgrid_img <- spgrid_img[idx]
 # 3) Count No. people & cars per grid cell
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# First we calculate for population data, then for car data.
+# We will calculate the total number of people and then cars at the grid cell level
+
 
 
 # 3.1) Extract total population counts/average density for spatial grid
@@ -605,21 +606,78 @@ prop$City <- as.factor(prop$City) ##Set character to factor
 levels(prop$City)[levels(prop$City) == "Zaporizhzhia"] <- "Zaporizhia" #Now correct the name
 
 
+## Create CityDate stamp
+prop$CityDate <- as.factor(paste(prop$City, prop$Date, sep = "_"))
 
-## Define the threhsold (here, 50%) and list images below the threshold
+## Define the threshold (here, 50%) and list images below the threshold
 prop_below <- filter(prop, Pop_threshold == "Below") #Keep images below threshold
-img_remove <- levels(factor(prop_below$ID))
+prop$CityDate <- factor(prop$CityDate)
+img_remove <- levels(factor(prop_below$CityDate))
+
 
 ## Now filter out those images 
 popcar2 <- filter(popcar, !(CityDate %in% img_remove)) #Now filter out cars with images below image threshold
 
 
 
-# 5.2) Aggregate data
-#~~~~~~~~~~~~~~~~~~~~~
+
+# 5.2) Get rid of images heavily obstructed by clouds
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# We have to remove images in which the bulk of the city
+# was obstructed by clouds. This is necessary in order
+# to preserve the 'cleanest' relationship between car and population.
+# Ignoring these images otherwise risk to underestimate the IDPs.
+
+
+# The following dataset contains information on the presence of
+# snow and clouds for each of the downloaded satellite images.
+# It also contains additional comments on the cloud extent, all based on
+# visual examination of each individual image.
+# There is a column called 'Keep_image', which basically contains information
+# on which images to keep. Images marked as 'No' refer to cases in which
+# it was heavily obstructed by clouds, and would as such mask the underlying car~pop dynamics.
+# Note: the same dataset was also used in the FINAL_Filtering_script_04.R script.
+
+
+## Read the data
+dfcl <- readxl::read_excel("Data/ImageFeatures/Image_cloud_snow_carDetection_evaluation.xlsx"); dfcl <- as.data.frame(dfcl)
+colnames(dfcl)[1:2] <- c('City', 'Date')
+
+## Standardize city names
+setdiff(popcar2$City, dfcl$City)
+dfcl$City <- as.factor(dfcl$City)
+levels(dfcl$City)[levels(dfcl$City) == "Zaporizhzhia"] <- "Zaporizhia"
+setdiff(popcar2$City, dfcl$City)
+
+
+## Create a common identifier
+dfcl$CityDate <- paste(dfcl$City, dfcl$Date, sep = "_")
+
+
+## Get images that should be filtered out
+img <- filter(dfcl, Keep_image == 'No') %>% dplyr::select(CityDate)
+
+
+## Filter out the selected images
+length(unique(popcar2$CityDate)) #Total number of images
+length(intersect(popcar2$CityDate, img$CityDate)) #No. of images that will be removed
+
+## Filter out images
+popcar2 <- filter(popcar2, !(CityDate %in% img$CityDate))
+
+
+
+
+
+# 5.3) Calculate average car abundance for given temporal resolution
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Averages are calculated for a given city within a given month of a given year for each grid cell
+
 
 ## First drop empty factor levels
 popcar2[,c('CityDate','grid_id', 'City', 'Date', 'Year', 'Month')] <- lapply(popcar2[,c('CityDate','grid_id', 'City', 'Date', 'Year', 'Month')], factor)
+
+
 
 popcar_aggr <- popcar2 %>% 
   #group_by(Year, Month, grid_id) %>%
