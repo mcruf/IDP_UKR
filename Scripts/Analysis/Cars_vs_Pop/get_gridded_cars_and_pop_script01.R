@@ -23,11 +23,18 @@
 # part of the car~pop evaluation.
 
 
-## Please update input & output folder paths accordingly 
+## Please update input & output folder paths accordingly.
+
+
+## ATTENTION: original worldpop file was too large to be uploaded on the github repository
+## The folder contains an aggregated file version in order for the user to run the below script.
+## However, the user is needs to download the original file via worldpop data, or request it to me (Marie)
+## such that the outputs are as in the original paper. 
+## For more details, refer to the README file under GIS/Population/WorldPop/Shapefile/Numbers/Uncontrained)
+
 
 ## Code written by: Marie-Christine Rufener < macrufener@gmail.com >
 ## Last update: May 2023
-
 
 #><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
@@ -184,9 +191,22 @@ imgpolyall <- do.call(what = sf:::rbind.sf, args=imgpoly2)
 
 # 1.3) Load worldpop raster
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## CAUTION - See comment above at the start of this script!
+
+
+
 if(DINPUT == "Count"){
-  #worldpop <- raster("GIS/Population/WorldPop/Shapefile/Numbers/Constrained/v2/100m/ukr_pop_2020_100m_constrained_v2.tif") # 100m resolution
-  worldpop <- raster("GIS/Population/WorldPop/Shapefile/Numbers/Uncontrained/100m_resolution/ukr_ppp_2019_UNadj.tif") # 100m resolution
+  
+  if(isTRUE(Sys.info()['effective_user'] == 'marie-christinerufener')){
+    #worldpop <- raster("GIS/Population/WorldPop/Shapefile/Numbers/Constrained/v2/100m/ukr_pop_2020_100m_constrained_v2.tif") # 100m resolution
+    worldpop <- raster("~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/GIS/Population/WorldPop/Shapefile/Numbers/Unconstrained/100m_resoultion/ukr_ppp_2019_UNadj.tif") # 100m resolution
+  
+  } else{
+    worldpop <- raster("GIS/Population/WorldPop/Shapefile/Numbers/Uncontrained/100m_resolution/ukr_ppp_2019_UNadj.tif") # 100m resolution
+    stop('CAUTION - Aggregated data is being loaded! For the original data, please refer to the comment at the start of this script.')
+  }
+
+  
 } else if(DINPUT == "Density"){
   worldpop <- raster("GIS/Population/WorldPop/Shapefile/Density/ukr_pd_2019_1km_UNadj.tif") # 1km resolution
 }
@@ -530,8 +550,8 @@ for(i in seq_along(cars_list)){
 
 ### Quick visualization
 mapview(spgrid_aoi[[27]], alpha.regions = 0) + #Kiev
-  mapview(worldpop_sf[[435]], zcol = 'Npop') +
-  mapview(cars_grid_list[[435]], zcol = 'Ncars')
+  mapview(worldpop_sf[[434]], zcol = 'Npop') +
+  mapview(cars_grid_list[[434]], zcol = 'Ncars')
 
 
 #><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
