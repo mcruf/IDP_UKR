@@ -73,6 +73,9 @@ cars <- do.call('rbind', cars)
 table(cars$Threshold) #No. of images for each threshold
 
 
+## Keep only o.45 threshold imaged
+cars <- filter(cars, Threshold == "th_045_carclass_18")
+
 
 
 #~~~~~~~~~~~
@@ -95,7 +98,7 @@ ggplot(cars, aes(x = as.factor(Hour))) +
         #axis.line = element_line(color = 'black'),
         legend.position = "none")
 
-# ggsave('../../Manuscript/Figures/Exploratory/hour_of_dat.jpg',
+# ggsave('../../Manuscript/Figures/Exploratory/hour_of_day.jpg',
 #        dpi = 300, width = 20, height = 20, unit='cm',
 #        bg = 'white')
 
@@ -106,7 +109,6 @@ ggplot(cars, aes(x = as.factor(Hour))) +
 
 ## Get total no. of images per city for 0.45 threshold
 dobs <- cars %>% 
-  filter(Threshold == "th_045_carclass_18") %>%
   group_by(City) %>% 
   dplyr::summarize(nobs = n()) %>%
   data.frame()
