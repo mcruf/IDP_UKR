@@ -537,7 +537,7 @@ IMG$Image <- factor(paste(IMG$City, IMG$Date, sep="_"))
 
 
 ### Now subset the car list data
-idx <- which(levels(cars2$CityDate) %in% levels(factor(IMG$Image)))
+idx <- intersect(levels(cars2$CityDate), levels(factor(IMG$Image)))
 cars2 <- filter(cars2, CityDate %in% idx)
 
 
