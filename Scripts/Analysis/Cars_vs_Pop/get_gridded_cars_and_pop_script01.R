@@ -34,9 +34,9 @@
 
 
 ## Code written by: Marie-Christine Rufener < macrufener@gmail.com >
-## Last update: May 2023
+## Last update: June 2023
 
-#><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+#><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
 
 #~~~~~~~~~~~~~~~~~
@@ -89,10 +89,42 @@ setwd("~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/GitHub/IDP_UKR
 
 
 
-# 1.1) AOI polygons of the satellite imagery
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# 1.1) Load aggregated data 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# To  retrieve only the images that were kept after post-processing pipeline
+## List all files (from all the thresholds)
+files <- list.files(path = 'Data/Cars/Car_aggregated/POP_CLOUD_filtered/',
+                    pattern = '.csv',
+                    full.names = TRUE,
+                    recursive = T)
+
+
+## Read the files
+dat <- list()
+for(i in seq_along(files)) {
+  dat[[i]] <- read.csv(files[i])
+  dat[[i]]$Threshold <- basename(dirname(files))[i]
+}
+
+
+## Bind the two data files into single data frame
+dat <- do.call('rbind', dat)
+
+
+## Keep only 0.45 threshold images & image id
+IMG <- dat %>% 
+  filter(Threshold == "th_045_carclass_18") %>%
+  .[,c('Image', 'City', 'Date')]
+
+
+
+
+
+
+# 1.2) AOI polygons of the cities
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## List all files in the folders
-fp <- list.files(path = "GIS/SatelliteImage/Img_AOI/",
+fp <- list.files(path = "GIS/SatelliteImage/Img_AOI",
                  recursive = TRUE,
                  pattern = "\\.shp$",
                  full.names = TRUE)
@@ -103,9 +135,9 @@ aoipoly <- list()
 for(i in seq_along(fp)) {
   aoipoly[[i]] <- st_read(fp[i])
   names(aoipoly)[[i]] <- basename(dirname(fp))[i]
+  aoipoly[[i]]$City <- as.factor(basename(dirname(fp))[i])
   aoipoly[[i]] <- st_transform(aoipoly[[i]],crs = 6381) # Project to CRS with units set in meters (to make the grid in the units of meters)
 }
-
 
 #lapply(imgpoly, function(x) st_crs(x)$epsg) #Checks the proj-string representation
 
@@ -114,11 +146,26 @@ for(i in seq_along(fp)) {
 aoipolyall <- do.call(what = sf:::rbind.sf, args=aoipoly)
 
 
+## Remove any non-matching cities
+setdiff(aoipolyall$City, unique(IMG$City))
 
-# 1.2) Satellite image polygons
+levels(aoipolyall$City)[levels(aoipolyall$City) == "Velyki_Kopani"] <- "Velyki-Kopani"
+levels(aoipolyall$City)[levels(aoipolyall$City) == "Bila_Tserkva"] <- "Bila-Tserkva"
+levels(aoipolyall$City)[levels(aoipolyall$City) == "Zaporizhia"] <- "Zaporizhzhia"
+
+rmv <- setdiff(aoipolyall$City, unique(IMG$City))
+
+
+aoipolyall <- filter(aoipolyall, City != rmv)
+
+
+
+
+
+# 1.3) Satellite image polygons
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## List all files in the folders -- full path names
-fp <- list.files(path = "GIS/SatelliteImage/Img_coverage/",
+fp <- list.files(path = "GIS/SatelliteImage/Img_coverage",
                  recursive = TRUE,
                  pattern = "\\.geojson$",
                  full.names = TRUE)
@@ -141,7 +188,7 @@ if(length(idxbs) != 0){
 }
 
 
-## Now load the shapefiles specific to each satelltie image
+## Now load the shapefiles specific to each satellite image
 imgpoly <- list()
 for(i in seq_along(fp)) {
   imgpoly[[i]] <- st_read(fp[i])
@@ -189,7 +236,7 @@ imgpolyall <- do.call(what = sf:::rbind.sf, args=imgpoly2)
 
 
 
-# 1.3) Load worldpop raster
+# 1.4) Load worldpop raster
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## CAUTION - See comment above at the start of this script!
 
@@ -200,12 +247,12 @@ if(DINPUT == "Count"){
   if(isTRUE(Sys.info()['effective_user'] == 'marie-christinerufener')){
     #worldpop <- raster("GIS/Population/WorldPop/Shapefile/Numbers/Constrained/v2/100m/ukr_pop_2020_100m_constrained_v2.tif") # 100m resolution
     worldpop <- raster("~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/GIS/Population/WorldPop/Shapefile/Numbers/Unconstrained/100m_resoultion/ukr_ppp_2019_UNadj.tif") # 100m resolution
-  
+    
   } else{
     worldpop <- raster("GIS/Population/WorldPop/Shapefile/Numbers/Uncontrained/100m_resolution/ukr_ppp_2019_UNadj.tif") # 100m resolution
     stop('CAUTION - Aggregated data is being loaded! For the original data, please refer to the comment at the start of this script.')
   }
-
+  
   
 } else if(DINPUT == "Density"){
   worldpop <- raster("GIS/Population/WorldPop/Shapefile/Density/ukr_pd_2019_1km_UNadj.tif") # 1km resolution
@@ -223,7 +270,7 @@ ukr <- st_read("GIS/Administrative_divisions/Ukraine/Adm_0/Without_CrimeaSevasto
 
 # 1.5) Load car coordinates data
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# There is a separate csv file for each satelltile image (city-date)
+# There is a separate csv file for each satellite image (city-date)
 # Here, all individual csv files will be loaded and then bound into a single data frame
 
 
@@ -373,12 +420,24 @@ spgrid_aoi <- list() #List to store the grids
 # 2.1) General grid 
 #~~~~~~~~~~~~~~~~~~~~~~
 ## Spatial grid based on AOI polygon 
+# for(i in seq_along(aoipoly)){
+#   spgrid_aoi[[i]] <- aoipoly[[i]] %>%
+#     st_make_grid(square = T, cellsize = c(GRID_SPACING, GRID_SPACING)) %>%
+#     st_intersection(aoipoly[[i]]) %>% #Crop grid to AOI polygons
+#     st_sf() %>%
+#     mutate(grid_id = 1:nrow(.), #get grid id
+#            area = as.numeric(st_area(.)))  %>% # Calculate the area of each grid cell 
+#     filter(area == 1000000) %>% # filter out grid cells that were cut by the AOI polygon (ie, cell size < 10e6 m2 (1x1km))
+#     st_transform(crs = 4326) #Transform back to wgs - https://epsg.io/32618
+# }
+
+
 for(i in seq_along(aoipoly)){
   spgrid_aoi[[i]] <- aoipoly[[i]] %>%
     st_make_grid(square = T, cellsize = c(GRID_SPACING, GRID_SPACING)) %>%
     st_intersection(aoipoly[[i]]) %>% #Crop grid to AOI polygons
     st_sf() %>%
-    mutate(grid_id = 1:nrow(.)) %>%
+    mutate(grid_id = 1:nrow(.))  %>% # Calculate the area of each grid cell 
     st_transform(crs = 4326) #Transform back to wgs - https://epsg.io/32618
 }
 
@@ -409,11 +468,29 @@ for(i in 1:nrow(imgpolyall)){
   idx <- which(names(spgrid_aoi) == CITY)
   grid <- spgrid_aoi[[idx]]
   
+  
   ## Intersect grid with image extent
   spgrid_img[[i]] <- imgpolyall[i,] %>%
     st_intersection(grid) #Crop grid to Image polygon extent
   
+  
+  ## Calculate grid area
+  spgrid_img[[i]] <- spgrid_img[[i]] %>% 
+    st_transform(crs = 6381) %>% 
+    mutate(area = as.numeric(st_area(geometry)))
+  
+  
+  ## Now filter out grid cells with area < 1km2 (there are cells that were cropped by the imagery extent)
+  spgrid_img[[i]] <- spgrid_img[[i]] %>%
+    mutate(area = round(area)) %>%
+    #filter(area == 1000000)
+    filter(area >= 990000) #There are some cells that are slightly smaller than 1km, but they can still be accounted for
+  
+  ## Tranform back to WGS84
+  spgrid_img[[i]] <- spgrid_img[[i]] %>%
+    st_transform(crs = 4326) #Transform back to wgs - https://epsg.io/32618
 }
+
 
 names(spgrid_img) <- paste(imgpolyall$City, imgpolyall$Date, sep ="_") #Set City-Date names to list elements
 
@@ -421,13 +498,23 @@ names(spgrid_img) <- paste(imgpolyall$City, imgpolyall$Date, sep ="_") #Set City
 ## Quick visualization
 mapview(spgrid_aoi[[27]], alpha.regions = 0) + #Kiev
   mapview(spgrid_img[[435]], lwd = 2) + #Kiev
-  mapview(spgrid_img[[449]], lwd = 2) + #Kiev
-  mapview(spgrid_img[[466]], lwd = 2)  #Kiev
+  #mapview(spgrid_img[[449]], lwd = 2) + #Kiev
+  mapview(spgrid_img[[457]], lwd = 2)  #Kiev
 
 
 
-# 2.3) Subset image-specific gird list to the city-date in cars list
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# 2.3) Subset image-specific grid list and cars list 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+## After the post-processing pipeline, we kept only a fraction
+## of the original satellite images. We therefore need to
+## subset the car and image-specific grid list to the city-date stamps
+## that remained after the post-processing pipeline.
+## To do so, we will use the aggregated data uploaded in section 1.1, 
+## and get the city-date stamp from there to check which ones we will keep.
+
+
 ### First standardize some City names
 cars2$City <- as.factor(cars2$City)
 levels(cars2$City)[levels(cars2$City) == "Bila-Tserkva"] <- "Bila_Tserkva"
@@ -435,16 +522,29 @@ levels(cars2$City)[levels(cars2$City) == "Velyki-Kopani"] <- "Velyki_Kopani"
 levels(cars2$City)[levels(cars2$City) == "Zaporizhzhia"] <- "Zaporizhia"
 
 
+IMG$City <- as.factor(IMG$City)
+levels(IMG$City)[levels(IMG$City) == "Bila-Tserkva"] <- "Bila_Tserkva"
+levels(IMG$City)[levels(IMG$City) == "Velyki-Kopani"] <- "Velyki_Kopani"
+levels(IMG$City)[levels(IMG$City) == "Zaporizhzhia"] <- "Zaporizhia"
+
+setdiff(levels(cars2$City), levels(IMG$City))
+
+
+
 ### Update CityDate column
 cars2$CityDate <- factor(paste(cars2$City, cars2$Date, sep="_"))
+IMG$Image <- factor(paste(IMG$City, IMG$Date, sep="_"))
 
 
-### Now subset the data
-idx <- which(names(spgrid_img) %in% unique(cars2$CityDate))
-length(idx) == length(cars) #Sanity check
+### Now subset the car list data
+idx <- intersect(levels(cars2$CityDate), levels(factor(IMG$Image)))
+cars2 <- filter(cars2, CityDate %in% idx)
 
-spgrid_img <- spgrid_img[idx]
 
+
+### And then the image-grid list
+idx2 <- which(names(spgrid_img) %in% levels(as.factor(IMG$Image)))
+spgrid_img <- spgrid_img[idx2]
 
 
 
@@ -456,7 +556,6 @@ spgrid_img <- spgrid_img[idx]
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # We will calculate the total number of people and then cars at the grid cell level
-
 
 
 # 3.1) Extract total population counts/average density for spatial grid
@@ -471,8 +570,8 @@ worldpop_grid <- list() #Set empty list to store the results
 if(DINPUT == "Count"){
   
   for(i in seq_along(spgrid_img)){
+    print(i)
     worldpop_grid[[i]] <- exact_extract(worldpop, spgrid_img[[i]], 'sum', append_cols=("grid_id"))
-    
     colnames(worldpop_grid[[i]]) <- c("grid_id", "Npop")
   }
 } else if(DINPUT == "Density"){
@@ -490,6 +589,7 @@ for(i in seq_along(worldpop_grid)){
   worldpop_grid[[i]]$City <- paste(names(worldpop_grid)[i])
 }
 
+
 ## Merge population count data to spatial grid data -- For plotting
 worldpop_sf <- list()
 for(i in seq_along(spgrid_img)){
@@ -497,11 +597,12 @@ for(i in seq_along(spgrid_img)){
 }
 
 worldpop_sf <- lapply(worldpop_sf, st_as_sf) ## Set it to sf object - for plotting
+names(worldpop_sf) <- names(spgrid_img)
 
 
 ### Quick visualization
 mapview(spgrid_aoi[[27]], alpha.regions = 0) + #Kiev
-  mapview(worldpop_sf[[435]], zcol = 'Npop')
+  mapview(worldpop_sf[[245]], zcol = 'Npop')
 
 
 
@@ -522,15 +623,17 @@ cars2 <- st_as_sf(cars2, coords = c("Longitude", "Latitude"),
 
 
 ## Split data by City-Date
+cars2$CityDate <- factor(cars2$CityDate)
+
 cars_list <- split(cars2, cars2$CityDate) #Now split the data
 
-setdiff(levels(factor(cars2$CityDate)), names(spgrid_img)) 
 
 
 ## Calculate total no. of cars
 cars_grid_list <- list() #Make empty list to store the results
 
 for(i in seq_along(cars_list)){
+  print(i)
   
   ind <- paste(unique(cars_list[[i]]$CityDate))
   
@@ -550,8 +653,9 @@ for(i in seq_along(cars_list)){
 
 ### Quick visualization
 mapview(spgrid_aoi[[27]], alpha.regions = 0) + #Kiev
-  mapview(worldpop_sf[[434]], zcol = 'Npop') +
-  mapview(cars_grid_list[[434]], zcol = 'Ncars')
+  mapview(worldpop_sf[[245]], zcol = 'Npop') +
+  mapview(cars_grid_list[[245]], zcol = 'Ncars')
+
 
 
 #><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
@@ -610,96 +714,18 @@ colnames(popcar)[3:4] <- c('City', 'Date')
 # Note that any desired temporal resolution could be chosen for the aggregation.
 
 
-# 5.1) Get rid of images below population threshold
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Before the aggregation, we will first remove any images that did not cover
-# 50% of the population distribution.
 
-## Load population threshold data
-#prop <- readRDS("Imagery_EDA/WorldPop_coverage/worlpop_proportion_image_over_aoi_df.rds")
-prop <- read.csv("Data/Population/Coverage/Population_coverage.csv")
-
-
-## Check whether there are spelling differences in City names
-setdiff(unique(prop$City), unique(popcar$City)) #Yep
-prop$City <- as.factor(prop$City) ##Set character to factor
-levels(prop$City)[levels(prop$City) == "Zaporizhzhia"] <- "Zaporizhia" #Now correct the name
-
-
-## Create CityDate stamp
-prop$CityDate <- as.factor(paste(prop$City, prop$Date, sep = "_"))
-
-## Define the threshold (here, 50%) and list images below the threshold
-prop_below <- filter(prop, Pop_threshold == "Below") #Keep images below threshold
-prop$CityDate <- factor(prop$CityDate)
-img_remove <- levels(factor(prop_below$CityDate))
-
-
-## Now filter out those images 
-popcar2 <- filter(popcar, !(CityDate %in% img_remove)) #Now filter out cars with images below image threshold
-
-
-
-
-# 5.2) Get rid of images heavily obstructed by clouds
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# We have to remove images in which the bulk of the city
-# was obstructed by clouds. This is necessary in order
-# to preserve the 'cleanest' relationship between car and population.
-# Ignoring these images otherwise risk to underestimate the IDPs.
-
-
-# The following dataset contains information on the presence of
-# snow and clouds for each of the downloaded satellite images.
-# It also contains additional comments on the cloud extent, all based on
-# visual examination of each individual image.
-# There is a column called 'Keep_image', which basically contains information
-# on which images to keep. Images marked as 'No' refer to cases in which
-# it was heavily obstructed by clouds, and would as such mask the underlying car~pop dynamics.
-# Note: the same dataset was also used in the FINAL_Filtering_script_04.R script.
-
-
-## Read the data
-dfcl <- readxl::read_excel("Data/ImageFeatures/Image_cloud_snow_carDetection_evaluation.xlsx"); dfcl <- as.data.frame(dfcl)
-colnames(dfcl)[1:2] <- c('City', 'Date')
-
-## Standardize city names
-setdiff(popcar2$City, dfcl$City)
-dfcl$City <- as.factor(dfcl$City)
-levels(dfcl$City)[levels(dfcl$City) == "Zaporizhzhia"] <- "Zaporizhia"
-setdiff(popcar2$City, dfcl$City)
-
-
-## Create a common identifier
-dfcl$CityDate <- paste(dfcl$City, dfcl$Date, sep = "_")
-
-
-## Get images that should be filtered out
-img <- filter(dfcl, Keep_image == 'No') %>% dplyr::select(CityDate)
-
-
-## Filter out the selected images
-length(unique(popcar2$CityDate)) #Total number of images
-length(intersect(popcar2$CityDate, img$CityDate)) #No. of images that will be removed
-
-## Filter out images
-popcar2 <- filter(popcar2, !(CityDate %in% img$CityDate))
-
-
-
-
-
-# 5.3) Calculate average car abundance for given temporal resolution
+# 5.1) Calculate average car abundance for given temporal resolution
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Averages are calculated for a given city within a given month of a given year for each grid cell
 
 
 ## First drop empty factor levels
-popcar2[,c('CityDate','grid_id', 'City', 'Date', 'Year', 'Month')] <- lapply(popcar2[,c('CityDate','grid_id', 'City', 'Date', 'Year', 'Month')], factor)
+popcar[,c('CityDate','grid_id', 'City', 'Date', 'Year', 'Month')] <- lapply(popcar[,c('CityDate','grid_id', 'City', 'Date', 'Year', 'Month')], factor)
 
 
 
-popcar_aggr <- popcar2 %>% 
+popcar_aggr <- popcar %>% 
   #group_by(Year, Month, grid_id) %>%
   group_by(City, Year, Month, grid_id) %>%
   summarize(Ncars_avg = mean(Ncars, na.rm=T),
@@ -713,7 +739,7 @@ popcar_aggr <- popcar2 %>%
   data.frame()
 
 
-## Inset column to identify confidence threshold (might be useful sometime later)
+## Insert column to identify confidence threshold (might be useful sometime later)
 popcar_aggr$Threshold <- THRESHOLD
 
 
@@ -784,7 +810,8 @@ popcar_aggr_grid[[27]] %>% #Kyiv
 
 
 ### Output file name
-OUTFILE <- paste("Npop_cars_", GRID_SPACING, "_m", sep="")
+#OUTFILE <- paste("Npop_cars_", GRID_SPACING, "_m", sep="")
+OUTFILE <- paste("Npop_cars_", GRID_SPACING, "_m_updated", sep="")
 
 
 ### output directory
@@ -815,6 +842,7 @@ if(CARS == "original"){
 
 ### Make output file
 OUT <- paste(OUTDIR, OUTFILE, ".RData",sep="")
+
 
 ### Remove objects from environment that won't be used 
 rm(list = setdiff(ls(), c('popcar_aggr_grid','spgrid_aoi', 'spgrid_img', 'OUT', 'popcar')))
