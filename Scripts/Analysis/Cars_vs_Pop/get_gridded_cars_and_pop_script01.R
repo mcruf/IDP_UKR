@@ -160,8 +160,6 @@ aoipolyall <- filter(aoipolyall, City != rmv)
 
 
 
-
-
 # 1.3) Satellite image polygons
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## List all files in the folders -- full path names
@@ -240,8 +238,6 @@ imgpolyall <- do.call(what = sf:::rbind.sf, args=imgpoly2)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## CAUTION - See comment above at the start of this script!
 
-
-
 if(DINPUT == "Count"){
   
   if(isTRUE(Sys.info()['effective_user'] == 'marie-christinerufener')){
@@ -250,7 +246,7 @@ if(DINPUT == "Count"){
     
   } else{
     worldpop <- raster("GIS/Population/WorldPop/Shapefile/Numbers/Uncontrained/100m_resolution/ukr_ppp_2019_UNadj.tif") # 100m resolution
-    stop('CAUTION - Aggregated data is being loaded! For the original data, please refer to the comment at the start of this script.')
+    stop('CAUTION - Aggregated worldpop data is being loaded! For the original data, please refer to the comment at the start of this script.')
   }
   
   
