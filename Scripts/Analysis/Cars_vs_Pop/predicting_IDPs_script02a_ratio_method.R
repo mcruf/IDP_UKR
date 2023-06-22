@@ -119,7 +119,7 @@ load("Npop_cars_1000_m_updated.RData")
 # Subset data for baseline (2019) and conflict years (2022), and
 # get months for which we have data for in each year.
 # We also subset for the first covid year (2020) in order to
-# verify that the population decrease/increase in war period are true .
+# verify that the population decrease/increase in war period make sense.
 
 
 YEARS <- c('2019', '2020', '2022') #Define baseline year and years of interest
@@ -298,6 +298,13 @@ for(city in seq_along(cities)){
   dat19c[idx, 'Ratio'] <- replace
   
   
+  ## Overcome NaN issue
+  ### Happens when there is zero cars and zero population
+  idx2 <- which(is.na(dat19c$Ratio))
+  dat19c[idx2, 'Ratio'] <- 0
+  
+  
+  
   # 4.2) Look-up for matching grid cells between reference year and years of interest
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
@@ -409,7 +416,7 @@ for(city in seq_along(cities)){
   
   
   ## Add dummy column to baseline year (to be able to merge all data into a single df)
-  dat19c$Month <- NA
+  dat19c$Month <- 'Baseline'
   dat19c$Relative_change <- NA
   
   ## Reorganize columns
