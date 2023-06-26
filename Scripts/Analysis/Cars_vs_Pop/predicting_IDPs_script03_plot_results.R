@@ -191,79 +191,77 @@ dfg2$Contrast <- ifelse(dfg2$Year == '2019', 'Pre-war',
 #~~~~~~~~~~~~~~~~~~~~
 # 3) Go for the plot
 #~~~~~~~~~~~~~~~~~~~~
-SCALE <- 4000
-dfg2 %>%
-  filter(City == "Mariupol") %>%
-  group_by(Month, Contrast) %>%
-  mutate(Month = replace(as.character(Month), Contrast=='Pre-war', "Baseline")) %>%
-  arrange(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
-  mutate(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
-  arrange(Contrast = factor(Contrast, levels = c('Pre-war', 'Covid', 'War'))) %>%
-  mutate(Contrast = factor(Contrast, levels = c('Pre-war', 'Covid', 'War'))) %>%
-  
-  # as_tibble() %>%
-  # mutate(
-  #   Diff = Totpop - Totpop[1],
-  #   Percent = round(Diff/Totpop[1]*100,3),
-  #   Direction = ifelse(Percent >0, 'Increase', 'Decrease'))  %>% 
-  # mutate(Direction = ifelse(Percent == 0, NA_integer_, Direction)) %>%
-  # mutate_at(c('Percent'), ~na_if(., 0)) %>%
-  
-  
-  #ggplot(aes(x=interaction(Month, Contrast), y=Totpop, fill = Contrast, col = Contrast, group = Method)) +
-  ggplot(aes(x=Month)) +
-  
-  geom_bar(aes(y=Totpop, fill = Contrast, col = Contrast, group = Method),
-           stat="identity",
-           #position=position_dodge(width = 0.9), 
-           position="stack", 
-           alpha = 0.5,
-           lwd = 1) +
-  geom_line( aes(y=AreaCovered*SCALE), size=2, color='black') +
-  scale_y_continuous(labels = comma, 
-                     sec.axis = sec_axis(trans = ~.*SCALE, name = "AreaCovered")) +
-  
-  #scale_x_discrete(guide = "axis_nested") +
-  
-  
-  # geom_text(aes(label=Percent, col = Directipn),
-  #           position = position_dodge(width = 1),
-  #           vjust = -0.25,
-  #           size = 12, fontface = 'bold') +
-  #col = 'gray40') +
-  
-  scale_fill_manual(name = "Contrast", values=c("cyan4",'gray70',"darkorange")) +
-  
-  #scale_color_manual(name = "Contrast", values=c('#B2182B','#2166AC', "cyan4", "darkorange")) + #Increase & Decrease
-  #scale_color_manual(name = "Contrast", values=c('#2166AC', "cyan4", "darkorange")) + #Increase
-  scale_color_manual(name = "Contrast", values=c( "cyan4", 'gray70',"darkorange")) + #Decrease
-  
 
-  #scale_color_manual(name = 'Direction', values = c('#B2182B','#2166AC')) +
+tmp <- dfg2 %>%
+  filter(City == "Mariupol")
 
+p1 <- tmp %>%
+      mutate(Method = if_else(Month == 'Baseline' & 
+                                Method == 'Ratio', 'Base', Method)) %>%
+      group_by(Month, Contrast) %>%
+      mutate(Month = replace(as.character(Month), Contrast=='Pre-war', "Baseline")) %>%
+      arrange(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
+      mutate(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
+      arrange(Contrast = factor(Contrast, levels = c('Pre-war', 'Covid', 'War'))) %>%
+      mutate(Contrast = factor(Contrast, levels = c('Pre-war', 'Covid', 'War'))) %>%
+      
+      as_tibble() %>%
+      mutate(
+        Diff = Totpop - Totpop[1],
+        Percent = round(Diff/Totpop[1]*100,3),
+        Direction = ifelse(Percent >0, 'Increase', 'Decrease'))  %>%
+      mutate(Direction = ifelse(Percent == 0, NA_integer_, Direction)) %>%
+      mutate_at(c('Percent'), ~na_if(., 0)) %>%
+      
+      
+      ggplot(aes(x=Month, y=Totpop)) +
+      geom_bar_pattern(aes(fill = Contrast, col = Contrast, pattern = Method),
+                       color = "black", 
+                       pattern_fill = "black",
+                       pattern_angle = 45,
+                       pattern_density = 0.05,
+                       pattern_spacing = 0.015,
+                       pattern_key_scale_factor = 0.6,
+                       stat="identity",
+                       position=position_dodge2(preserve = 'single', padding = 2),
+                       #width = 2,
+                       #position="dodge", 
+                       alpha = 0.5,
+                       lwd = 0.5) +
+      
+      geom_text(aes(label = round(Percent, 1),  group = Contrast),
+                position = position_dodge2(width = 1, preserve = "single"), vjust=-0.5,
+                size = 4, fontface = 'bold', col = 'gray20') +
+      
+      scale_pattern_manual(values = c(Ratio = "stripe", GAM = "none", Base = "none"),
+                           breaks = c('Ratio', 'GAM')) +
+      
+      guides(pattern = guide_legend(override.aes = list(fill = "white")),
+             fill = guide_legend(override.aes = list(pattern = "none"))) +
+      
+      scale_y_continuous(labels = comma,
+                         sec.axis = sec_axis(trans = ~(. / max(tmp$Totpop)), name = "AOI coverage", labels = scales::percent)) +
+      scale_fill_manual(name = "Contrast", values=c("cyan4",'gray70',"darkorange")) +
+      scale_color_manual(name = "Contrast", values=c("cyan4",'gray70',"darkorange")) +
+      theme_bw() +
+      ylab('No. people') + xlab('') +
+      theme_bw() +
+      theme(axis.text.x = element_text(size = 25, face = 'bold'),
+            axis.text.y = element_text(size = 25),
+            axis.title.y = element_text(size = 28, face = "bold", vjust = 5),
+            panel.border = element_blank(),
+            plot.title = element_text(size = 30, face = "bold", hjust = 0.5),
+            legend.position = "top",
+            plot.margin = unit(c(t=1,b=0,r=0,l=2), "cm"),
+            panel.spacing = unit(0, units = "cm"), # removes space between panels
+            strip.placement = "outside", # moves the states down
+            strip.background = element_rect(fill = "white"))
 
-  ylab('No. people') + xlab('') +
-  theme_bw() +
-  theme(axis.text.x = element_text(size = 38, face = 'bold'),
-        axis.text.y = element_text(size = 31),
-        axis.title.y = element_text(size = 35, face = "bold", vjust = 5),
-        panel.border = element_blank(),
-        plot.title = element_text(size = 40, face = "bold", hjust = 0.5),
-        legend.position = "none",
-        plot.margin = unit(c(t=1,b=0,r=0,l=2), "cm"),
-        panel.spacing = unit(0, units = "cm"), # removes space between panels
-        strip.placement = "outside", # moves the states down
-        strip.background = element_rect(fill = "white"))
+OUTFILE <- "~/Downloads/test.jpg"
 
-,
-        ggh4x.axis.nestline.x = element_line(linewidth = 0.5),
-        
-        ggh4x.axis.nesttext.x = element_text(colour = "gray40", angle = 360, 
-                                             hjust = 0.5, 
-                                             face ='bold',
-                                             margin = unit(c(3, 0, 0, 0), "mm")))
-
-
+ggsave(filename = OUTFILE, 
+       plot = p1,
+       dpi = 300, width = 30, height = 20, unit='cm')
 
 
 # In order to evaluate the relative change in total population size,
