@@ -50,16 +50,221 @@ setwd("~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/GitHub/IDP_UKR
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ratio <- readRDS("Data/Predictions/PopPred_ratio_method.rds")
 
+ratio <- do.call("rbind", ratio)
+ratio$Method <- "Ratio"
+
 
 # 1.2) GAM prediction method
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#INCLUDE!
+gam <- readRDS("Data/Predictions/PopPred_gam_method.rds")
+gam <- do.call("rbind", gam)
+gam$Method <- "GAM"
+
+
+# 1.3) Bind the two datasets
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+datall <- rbind(ratio,gam)
+
+# Convert appropriate variables to factor 
+datall$grid_id <- as.factor(datall$grid_id)
+datall$City <- as.factor(datall$City)
+datall$Year <- as.factor(datall$Year)
+datall$Month <- as.factor(datall$Month)
+
+# Standardize city names
+levels(datall$City)[levels(datall$City) == "Bila_Tserkva"] <- "Bila-Tserkva"
+levels(datall$City)[levels(datall$City) == "Zaporizhia"] <- "Zaporizhzhia"
+
+
+
+# 1.4) AOI polygons of the cities
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## List all files in the folders
+fp <- list.files(path = "GIS/SatelliteImage/Img_AOI",
+                 recursive = TRUE,
+                 pattern = "\\.shp$",
+                 full.names = TRUE)
+
+
+## Load the files & set them into a list
+aoipoly <- list()
+for(i in seq_along(fp)) {
+  aoipoly[[i]] <- st_read(fp[i])
+  names(aoipoly)[[i]] <- basename(dirname(fp))[i]
+  aoipoly[[i]]$City <- as.factor(basename(dirname(fp))[i])
+  aoipoly[[i]] <- st_transform(aoipoly[[i]],crs = 6381) # Project to CRS with units set in meters (to make the grid in the units of meters)
+}
+
+
+## Combine all polygons into a single shapefile 
+aoipolyall <- do.call(what = sf:::rbind.sf, args=aoipoly)
+aoipolyall$City <- factor(aoipolyall$City)
+
+
+# Standardize city names
+levels(aoipolyall$City)[levels(aoipolyall$City) == "Bila_Tserkva"] <- "Bila-Tserkva"
+levels(aoipolyall$City)[levels(aoipolyall$City) == "Zaporizhia"] <- "Zaporizhzhia"
+
+
+
+
+## Remove any non-matching cities
+setdiff(aoipolyall$City, levels(datall$City))
+rmv <- setdiff(aoipolyall$City, levels(datall$City))
+
+aoipolyall <- filter(aoipolyall, !(City %in% rmv))
+aoipolyall$City <- factor(aoipolyall$City)
+
+rm(aoipoly)
 
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # 2) Some additional data manipulation
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# 2.1) Convert data to UTM projection
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+CRS <- st_crs(aoipolyall)$epsg
+datall <- st_transform(datall, CRS)
+
+
+# 2.2) Attach AOI area to dataframe
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Specific to each city
+
+# 2.2.1) Get total area of each city AOI
+aoipolyall$AreaAOI_km2 <- as.numeric(round(st_area(aoipolyall)/1e6,1))
+
+## Now merge info to dataframe
+setdiff(levels(aoipolyall$City), levels(datall$City)) #Sanity check
+aoipolyall2 <- st_drop_geometry(aoipolyall)
+datall <- merge(datall, aoipolyall2[,c("City", "AreaAOI_km2")], by = "City")
+
+
+
+# 2.3) Calculate area for each month-city
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+datalla <- datall %>% 
+           filter(Year == "2019") #Only 2019 (baseline)
+
+datallb <- datall %>% 
+           group_by(City, Year, Month, Method) %>% 
+           filter(!(Year == "2019")) %>% #All years but 2019 (baseline)
+           mutate(AreaAOI_km2 = round(sum(st_area(geometry))/1e6,1))
+
+datall <- rbind(datalla, datallb) #Put all back
+
+rm(datalla); rm(datallb)
+
+
+# 2.4) Calculate percentage of area covered
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+dfg <- datall %>% 
+       group_by(City, Year, Month, Method) %>%
+       summarize(Totpop = sum(Npop),
+                  AreaAOI_km2 = paste(unique(AreaAOI_km2))) 
+dfg$AreaAOI_km2 <- as.numeric(as.character(dfg$AreaAOI_km2))
+dfg$Method <- as.factor(dfg$Method)
+
+
+dfg2 <- dfg %>%
+        group_by(City) %>%
+        slice(2:n()) %>% #Remove one of the baselines (there is a baseline for each method, with same results)
+        #ungroup %>%     
+        #group_by(City, Year, Month, Method) %>%  
+        #arrange( City, Year, Month, Method)  %>% 
+        mutate(AreaCovered = (AreaAOI_km2 * 100 / AreaAOI_km2[1])) 
+        #%>%filter(City == "Kyiv") 
+
+
+## Some additional manupulation
+dfg2$Month <- stringr::str_to_title(dfg2$Month); dfg2$Month <- as.factor(dfg2$Month)
+
+## Rearrange months by chronological order
+dfg2$Month <- factor(dfg2$Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))
+
+dfg2$Contrast <- ifelse(dfg2$Year == '2019', 'Pre-war',
+                 ifelse(dfg2$Year == '2020', 'Covid', 'War'))
+
+
+#~~~~~~~~~~~~~~~~~~~~
+# 3) Go for the plot
+#~~~~~~~~~~~~~~~~~~~~
+SCALE <- 4000
+dfg2 %>%
+  filter(City == "Mariupol") %>%
+  group_by(Month, Contrast) %>%
+  mutate(Month = replace(as.character(Month), Contrast=='Pre-war', "Baseline")) %>%
+  arrange(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
+  mutate(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
+  arrange(Contrast = factor(Contrast, levels = c('Pre-war', 'Covid', 'War'))) %>%
+  mutate(Contrast = factor(Contrast, levels = c('Pre-war', 'Covid', 'War'))) %>%
+  
+  # as_tibble() %>%
+  # mutate(
+  #   Diff = Totpop - Totpop[1],
+  #   Percent = round(Diff/Totpop[1]*100,3),
+  #   Direction = ifelse(Percent >0, 'Increase', 'Decrease'))  %>% 
+  # mutate(Direction = ifelse(Percent == 0, NA_integer_, Direction)) %>%
+  # mutate_at(c('Percent'), ~na_if(., 0)) %>%
+  
+  
+  #ggplot(aes(x=interaction(Month, Contrast), y=Totpop, fill = Contrast, col = Contrast, group = Method)) +
+  ggplot(aes(x=Month)) +
+  
+  geom_bar(aes(y=Totpop, fill = Contrast, col = Contrast, group = Method),
+           stat="identity",
+           #position=position_dodge(width = 0.9), 
+           position="stack", 
+           alpha = 0.5,
+           lwd = 1) +
+  geom_line( aes(y=AreaCovered*SCALE), size=2, color='black') +
+  scale_y_continuous(labels = comma, 
+                     sec.axis = sec_axis(trans = ~.*SCALE, name = "AreaCovered")) +
+  
+  #scale_x_discrete(guide = "axis_nested") +
+  
+  
+  # geom_text(aes(label=Percent, col = Directipn),
+  #           position = position_dodge(width = 1),
+  #           vjust = -0.25,
+  #           size = 12, fontface = 'bold') +
+  #col = 'gray40') +
+  
+  scale_fill_manual(name = "Contrast", values=c("cyan4",'gray70',"darkorange")) +
+  
+  #scale_color_manual(name = "Contrast", values=c('#B2182B','#2166AC', "cyan4", "darkorange")) + #Increase & Decrease
+  #scale_color_manual(name = "Contrast", values=c('#2166AC', "cyan4", "darkorange")) + #Increase
+  scale_color_manual(name = "Contrast", values=c( "cyan4", 'gray70',"darkorange")) + #Decrease
+  
+
+  #scale_color_manual(name = 'Direction', values = c('#B2182B','#2166AC')) +
+
+
+  ylab('No. people') + xlab('') +
+  theme_bw() +
+  theme(axis.text.x = element_text(size = 38, face = 'bold'),
+        axis.text.y = element_text(size = 31),
+        axis.title.y = element_text(size = 35, face = "bold", vjust = 5),
+        panel.border = element_blank(),
+        plot.title = element_text(size = 40, face = "bold", hjust = 0.5),
+        legend.position = "none",
+        plot.margin = unit(c(t=1,b=0,r=0,l=2), "cm"),
+        panel.spacing = unit(0, units = "cm"), # removes space between panels
+        strip.placement = "outside", # moves the states down
+        strip.background = element_rect(fill = "white"))
+
+,
+        ggh4x.axis.nestline.x = element_line(linewidth = 0.5),
+        
+        ggh4x.axis.nesttext.x = element_text(colour = "gray40", angle = 360, 
+                                             hjust = 0.5, 
+                                             face ='bold',
+                                             margin = unit(c(3, 0, 0, 0), "mm")))
+
+
+
 
 # In order to evaluate the relative change in total population size,
 # we have to do so by standardizing the spatial extents either between
