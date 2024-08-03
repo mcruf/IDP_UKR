@@ -24,6 +24,7 @@
 # Load libraries
 #~~~~~~~~~~~~~~~~~
 library(ggplot2)
+library(ggpattern)
 library(viridis)
 library(dplyr)
 library(scales)
@@ -35,8 +36,8 @@ library(ggpubr)
 
 
 ## Standard working directory
-setwd("~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/GitHub/IDP_UKR/") 
-
+#setwd("~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/GitHub/IDP_UKR/") 
+setwd("/Users/mcruf/Documents/IDP_UKR")
 
 #><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
@@ -193,75 +194,260 @@ dfg2$Contrast <- ifelse(dfg2$Year == '2019', 'Pre-war',
 #~~~~~~~~~~~~~~~~~~~~
 
 tmp <- dfg2 %>%
-  filter(City == "Mariupol")
+  #filter(City %in% c("Uzhhorod","Kyiv", "Mariupol")) %>%
+  #filter(City %in% levels(City)[1:8]) %>%
+  #filter(City %in% levels(City)[9:16]) %>%
+  #filter(City %in% levels(City)[c(17:18,20:23,25:26)]) %>% # Avoiding kyiv and Mariupol
+  #filter(City %in% levels(City)[27:34]) %>%
+  filter(City %in% levels(City)[c(35:38,40:43)]) %>%
+  
+  mutate(Method = if_else(Month == 'Baseline' & 
+                            Method == 'Ratio', 'Base', Method)) %>%
+  group_by(City, Month, Contrast) %>%
+  mutate(Month = replace(as.character(Month), Contrast=='Pre-war', "Baseline")) %>%
+  arrange(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
+  mutate(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
+  arrange(Contrast = factor(Contrast, levels = c('Pre-war', 'Covid', 'War'))) %>%
+  mutate(Contrast = factor(Contrast, levels = c('', 'Covid', 'War'))) %>%
+  #tidyverse::drop_na(Contrast) %>%
+  as_tibble() %>%
+  group_by(City) %>%
+  mutate(
+    Diff = Totpop - Totpop[1],
+    Percent = round(Diff/Totpop[1]*100,3),
+    Direction = ifelse(Percent >0, 'Increase', 'Decrease'))  %>%
+  mutate(Direction = ifelse(Percent == 0, NA_integer_, Direction)) %>%
+  mutate_at(c('Percent'), ~na_if(., 0)) %>%
+  as_tibble() %>%
+  group_by(City) %>%
+  mutate(
+    Diff = Totpop - Totpop[1],
+    Percent = round(Diff/Totpop[1]*100,3),
+    Direction = ifelse(Percent >0, 'Increase', 'Decrease'),
+    Totpop2 = Totpop/1000)  %>%
+  mutate(Direction = ifelse(Percent == 0, NA_integer_, Direction)) %>%
+  mutate_at(c('Percent'), ~na_if(., 0))
 
-p1 <- tmp %>%
-      mutate(Method = if_else(Month == 'Baseline' & 
-                                Method == 'Ratio', 'Base', Method)) %>%
-      group_by(Month, Contrast) %>%
-      mutate(Month = replace(as.character(Month), Contrast=='Pre-war', "Baseline")) %>%
-      arrange(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
-      mutate(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
-      arrange(Contrast = factor(Contrast, levels = c('Pre-war', 'Covid', 'War'))) %>%
-      mutate(Contrast = factor(Contrast, levels = c('Pre-war', 'Covid', 'War'))) %>%
-      
-      as_tibble() %>%
-      mutate(
-        Diff = Totpop - Totpop[1],
-        Percent = round(Diff/Totpop[1]*100,3),
-        Direction = ifelse(Percent >0, 'Increase', 'Decrease'))  %>%
-      mutate(Direction = ifelse(Percent == 0, NA_integer_, Direction)) %>%
-      mutate_at(c('Percent'), ~na_if(., 0)) %>%
-      
-      
-      ggplot(aes(x=Month, y=Totpop)) +
-      geom_bar_pattern(aes(fill = Contrast, col = Contrast, pattern = Method),
-                       color = "black", 
-                       pattern_fill = "black",
-                       pattern_angle = 45,
-                       pattern_density = 0.05,
-                       pattern_spacing = 0.015,
-                       pattern_key_scale_factor = 0.6,
-                       stat="identity",
-                       position=position_dodge2(preserve = 'single', padding = 2),
-                       #width = 2,
-                       #position="dodge", 
-                       alpha = 0.5,
-                       lwd = 0.5) +
-      
-      geom_text(aes(label = round(Percent, 1),  group = Contrast),
-                position = position_dodge2(width = 1, preserve = "single"), vjust=-0.5,
-                size = 4, fontface = 'bold', col = 'gray20') +
-      
-      scale_pattern_manual(values = c(Ratio = "stripe", GAM = "none", Base = "none"),
-                           breaks = c('Ratio', 'GAM')) +
-      
-      guides(pattern = guide_legend(override.aes = list(fill = "white")),
-             fill = guide_legend(override.aes = list(pattern = "none"))) +
-      
-      scale_y_continuous(labels = comma,
-                         sec.axis = sec_axis(trans = ~(. / max(tmp$Totpop)), name = "AOI coverage", labels = scales::percent)) +
-      scale_fill_manual(name = "Contrast", values=c("cyan4",'gray70',"darkorange")) +
-      scale_color_manual(name = "Contrast", values=c("cyan4",'gray70',"darkorange")) +
-      theme_bw() +
-      ylab('No. people') + xlab('') +
-      theme_bw() +
-      theme(axis.text.x = element_text(size = 25, face = 'bold'),
-            axis.text.y = element_text(size = 25),
-            axis.title.y = element_text(size = 28, face = "bold", vjust = 5),
-            panel.border = element_blank(),
-            plot.title = element_text(size = 30, face = "bold", hjust = 0.5),
-            legend.position = "top",
-            plot.margin = unit(c(t=1,b=0,r=0,l=2), "cm"),
-            panel.spacing = unit(0, units = "cm"), # removes space between panels
-            strip.placement = "outside", # moves the states down
-            strip.background = element_rect(fill = "white"))
 
-OUTFILE <- "~/Downloads/test.jpg"
 
-ggsave(filename = OUTFILE, 
-       plot = p1,
-       dpi = 300, width = 30, height = 20, unit='cm')
+tmp1 <- tmp %>% filter(Method == 'Base')
+tmp2 <- tmp %>% filter(!(Method %in% 'Base'))
+
+
+
+
+
+p1 <- tmp2 %>%
+  filter(!is.na(Contrast)) %>%
+  ggplot(aes(x=Month, y=Totpop2)) +
+  #facet_wrap(~ factor(City, levels = c('Uzhhorod', 'Kyiv', 'Mariupol')), ncol=1, scales="free_y") +
+  facet_wrap(~ City,  ncol=1, scales="free_y") +
+  geom_hline(data = plyr::ddply(tmp1, 'City', summarize, baseline = unique(Totpop2)), aes(yintercept = baseline), col = 'darkorange', linetype='dashed', linewidth = 1.2)+
+  geom_bar_pattern(aes(fill = Contrast, col = Contrast, pattern = Method),
+                   color = "black", 
+                   pattern_fill = "black",
+                   pattern_angle = 45,
+                   pattern_density = 0.05,
+                   pattern_spacing = 0.015,
+                   pattern_key_scale_factor = 0.6,
+                   stat="identity",
+                   position=position_dodge2(preserve = 'single', padding = 2),
+                   width = 1,
+                   #position="dodge", 
+                   alpha = 0.5,
+                   lwd = 0.5
+  ) +
+  
+  geom_text_repel(aes(label = round(Percent, 1),  group = Contrast, col = Direction),
+                  position = position_dodge2(width = 1, preserve = "single"), vjust=-0.5,
+                  size = 6, fontface = 'bold',
+                  show.legend = F) +
+  # geom_point(aes(x = Month, y = Totpop2, shape = Method),
+  #            size = 5,
+  #           position = position_dodge2(width = 1, preserve = "single"))+
+  
+  scale_pattern_manual(values = c(Ratio = "stripe", GAM = "none", Base = "none"),
+                       breaks = c('Ratio', 'GAM')) +
+  
+  guides(pattern = guide_legend(override.aes = list(fill = "white", size=10)),
+         fill = guide_legend(title = "Period", override.aes = list(pattern = "none", size=10, shape = 21))) +
+  scale_y_continuous(expand=expansion(mult = c(0,0.1)))+
+  # scale_y_continuous(labels = comma,
+  #                    sec.axis = sec_axis(trans = ~(. / max(tmp2$Totpop2)), name = "AOI coverage", labels = scales::percent)) +
+  scale_fill_manual(name = "Contrast", values=c("gray70",'cyan4')) +
+  #scale_color_manual(name = "Contrast", values=c("cyan4",'gray70',"darkorange")) +
+  scale_color_manual(name = "Direction", values=c("darkred",'dodgerblue4')) +
+  theme_bw() +
+  ylab('No. people (in thousands)') + xlab('') +
+  theme_pubclean() +
+  theme(axis.text.x = element_text(size = 22,face = 'bold'),
+        axis.text.y = element_text(size = 25),
+        axis.title.y = element_text(size = 28, face = "bold", vjust = 5),
+        panel.border = element_blank(),
+        plot.title = element_text(size = 30, face = "bold", hjust = 0.5),
+        legend.position = "bottom",
+        legend.margin=margin(t=35),
+        legend.title = element_text(face = 'bold', size = 20),
+        legend.text = element_text(size = 18),
+        legend.spacing.x = unit(2.5, "cm"),
+        #legend.box="vertical", 
+        plot.margin = unit(c(t=1,b=1,r=0,l=1), "cm"),
+        panel.spacing = unit(1, units = "cm"), # removes space between panels
+        strip.placement = "outside", # moves the states down
+        strip.text = element_text(size=18, face = 'bold', colour = 'gray20'),
+        strip.background = element_rect(fill = 'gray98', colour='gray70'),
+        
+        
+        #panel.grid.major = element_line(colour = grey(0.4),linetype = 3 )
+        #axis.line = element_line(color = 'black'),
+        
+  )
+
+# OUTFILE <- "~/Downloads/test_plot.jpg"
+# ggsave(filename = OUTFILE, 
+#        plot = p1,
+#        dpi = 300, width = 30, height = 45, unit='cm')
+
+
+p2 <- tmp2 %>%
+  filter(!is.na(Contrast)) %>%
+  ggplot(aes(x=Month, y = AreaCovered)) +
+  geom_point(aes(fill = Contrast), col = 'gray40', alpha = 0.5, size = 10, shape = 21, stroke = 2) +
+  geom_segment(aes(x = Month, xend = Month, y = 0, yend= 100),
+               linetype = 'dotted',
+               size = 0.1) +
+  #coord_flip()
+  #facet_wrap(~ factor(City, levels = c('Uzhhorod', 'Kyiv', 'Mariupol')), ncol=1, scales="free_y") +
+  facet_wrap(~ City,  ncol=1, scales="free_y") +
+  scale_y_continuous(position = "right") +
+  guides(fill = guide_legend(override.aes = list(pattern = "none", size=10))) +
+  scale_fill_manual(name = "Contrast", values=c("gray70",'cyan4')) +
+  scale_color_manual(name = "Contrast", values=c("gray70",'cyan4')) +
+  ylab('Area covered (%)\n') + xlab('') +
+  theme_bw() +
+  theme(axis.text.x = element_text(size = 22, face = 'bold'),
+        axis.text.y = element_text(size = 25),
+        axis.title.y = element_text(size = 28, face = "bold", vjust = 5),
+        panel.border = element_blank(),
+        plot.title = element_text(size = 30, face = "bold", hjust = 0.5),
+        legend.position = "bottom",
+        legend.margin=margin(t=35),
+        legend.title = element_text(face = 'bold', size = 20),
+        legend.text = element_text(size = 18),
+        legend.spacing.x = unit(2.5, "cm"),
+        #legend.box="vertical", 
+        plot.margin = unit(c(t=1,b=1,r=0,l=0.8), "cm"),
+        panel.spacing = unit(1, units = "cm"), # removes space between panels
+        strip.placement = "outside", # moves the states down
+        strip.text = element_text(size=18, face = 'bold', colour = 'gray20'),
+        strip.background = element_rect(fill = 'gray98', colour='gray70'),
+        panel.grid.major.x = element_line(linewidth = 0.5,
+                                          linetype = 3,
+                                          color = 'grey'),
+        panel.grid.major.y = element_line(linewidth = 0.5,
+                                          linetype = 3,
+                                          color = 'grey'),
+        panel.grid.minor.y = element_blank())
+
+
+
+OUTFILE2 <- "~/Downloads/test_plot2.jpg"
+
+ggsave(filename = OUTFILE2, 
+       plot = p2,
+       dpi = 300, width = 30, height = 45, unit='cm')
+
+
+
+
+p3<-ggarrange(p1, p2, nrow = 1, common.legend = TRUE,
+              legend = "bottom")
+OUTFILE3 <- "~/Downloads/test_plot3.jpg"
+
+### Main plot
+# ggsave(filename = OUTFILE3, 
+#        plot = p3,
+#        dpi = 300, width = 40, height = 40, unit='cm')
+
+
+### Suppl. plots
+ggsave(filename = OUTFILE3, 
+       plot = p3,
+       dpi = 300, width = 50, height = 70, unit='cm')
+
+
+
+## Deprecated
+# tmp <- dfg2 %>%
+#   filter(City == "Kyiv")
+# 
+# p1 <- tmp %>%
+#       mutate(Method = if_else(Month == 'Baseline' & 
+#                                 Method == 'Ratio', 'Base', Method)) %>%
+#       group_by(Month, Contrast) %>%
+#       mutate(Month = replace(as.character(Month), Contrast=='Pre-war', "Baseline")) %>%
+#       arrange(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
+#       mutate(Month = factor(Month, levels=c('Baseline','Jan','Feb', 'Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))) %>%
+#       arrange(Contrast = factor(Contrast, levels = c('Pre-war', 'Covid', 'War'))) %>%
+#       mutate(Contrast = factor(Contrast, levels = c('Pre-war', 'Covid', 'War'))) %>%
+#       
+#       as_tibble() %>%
+#       mutate(
+#         Diff = Totpop - Totpop[1],
+#         Percent = round(Diff/Totpop[1]*100,3),
+#         Direction = ifelse(Percent >0, 'Increase', 'Decrease'))  %>%
+#       mutate(Direction = ifelse(Percent == 0, NA_integer_, Direction)) %>%
+#       mutate_at(c('Percent'), ~na_if(., 0)) %>%
+#       
+#       
+#       ggplot(aes(x=Month, y=Totpop)) +
+#       geom_bar_pattern(aes(fill = Contrast, col = Contrast, pattern = Method),
+#                        color = "black", 
+#                        pattern_fill = "black",
+#                        pattern_angle = 45,
+#                        pattern_density = 0.05,
+#                        pattern_spacing = 0.015,
+#                        pattern_key_scale_factor = 0.6,
+#                        stat="identity",
+#                        position=position_dodge2(preserve = 'single', padding = 2),
+#                        #width = 2,
+#                        #position="dodge", 
+#                        alpha = 0.5,
+#                        lwd = 0.5) +
+#       
+#       geom_text(aes(label = round(Percent, 1),  group = Contrast),
+#                 position = position_dodge2(width = 1, preserve = "single"), vjust=-0.5,
+#                 size = 4, fontface = 'bold', col = 'gray20') +
+#       
+#       scale_pattern_manual(values = c(Ratio = "stripe", GAM = "none", Base = "none"),
+#                            breaks = c('Ratio', 'GAM')) +
+#       
+#       guides(pattern = guide_legend(override.aes = list(fill = "white")),
+#              fill = guide_legend(override.aes = list(pattern = "none"))) +
+#       
+#       scale_y_continuous(labels = comma,
+#                          sec.axis = sec_axis(trans = ~(. / max(tmp$Totpop)), name = "AOI coverage", labels = scales::percent)) +
+#       scale_fill_manual(name = "Contrast", values=c("cyan4",'gray70',"darkorange")) +
+#       scale_color_manual(name = "Contrast", values=c("cyan4",'gray70',"darkorange")) +
+#       theme_bw() +
+#       ylab('No. people') + xlab('') +
+#       theme_bw() +
+#       theme(axis.text.x = element_text(size = 25, face = 'bold'),
+#             axis.text.y = element_text(size = 25),
+#             axis.title.y = element_text(size = 28, face = "bold", vjust = 5),
+#             panel.border = element_blank(),
+#             plot.title = element_text(size = 30, face = "bold", hjust = 0.5),
+#             legend.position = "top",
+#             plot.margin = unit(c(t=1,b=0,r=0,l=2), "cm"),
+#             panel.spacing = unit(0, units = "cm"), # removes space between panels
+#             strip.placement = "outside", # moves the states down
+#             strip.background = element_rect(fill = "white"))
+# 
+# OUTFILE <- "~/Downloads/test.jpg"
+# 
+# ggsave(filename = OUTFILE, 
+#        plot = p1,
+#        dpi = 300, width = 30, height = 20, unit='cm')
 
 
 # In order to evaluate the relative change in total population size,

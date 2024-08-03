@@ -41,7 +41,8 @@ everysecond <- function(x){
 # Set WD
 #~~~~~~~~~
 ## Set main working directory
-setwd("~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/GitHub/IDP_UKR/") 
+#setwd("~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/GitHub/IDP_UKR/") 
+setwd("~/Documents/IDP_UKR/") 
 
 #><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 

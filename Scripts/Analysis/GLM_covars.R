@@ -27,8 +27,8 @@ library(jtools)
 
 #><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
-setwd("~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine") ## Set appropriate WD
-
+#setwd("~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine") ## Set appropriate WD
+setwd("~/Documents/IDP_UKR/") 
 
 #~~~~~~~~~~~~~~~~~~~~~
 # 1) Read data files
@@ -77,7 +77,8 @@ cars$Image_resolution <- as.factor(cars$Image_resolution)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ## Import data
-snow <- readxl::read_excel("Imagery_EDA/Image_cloud_snow_carDetection_evaluation.xlsx")
+#snow <- readxl::read_excel("Imagery_EDA/Image_cloud_snow_carDetection_evaluation.xlsx")
+snow <- readxl::read_excel("Data/ImageFeatures/Image_cloud_snow_carDetection_evaluation.xlsx")
 
 ## Standardize column names
 colnames(snow)[1:2] <- c('City', 'Date')
@@ -115,7 +116,8 @@ res <- cars %>%
   ggplot(aes(x=Image_resolution, y = Dcars)) +
   geom_jitter(width=0.15, alpha=0.5, col = 'cyan4', size = 3) +
   geom_boxplot(outlier.shape = NA, width=0.5, fill = NA, col = 'gray30', lwd = 0.8) +
-  theme_bw() +
+ # theme_bw() +
+  theme_pubclean() +
   ylab(expression(bold(paste("Car Density (No. cars/km" ^ "2", ")")))) +
   xlab('Image resolution (m)') +
   geom_text(data=data.frame(), aes(label = '(a)', x = -Inf, y = Inf),
@@ -156,10 +158,11 @@ snow <- cars %>%
   ggplot(aes(x=Snow_presence, y = Dcars)) +
   geom_jitter(width=0.15, alpha=0.5, col = 'cyan4', size = 3) +
   geom_boxplot(outlier.shape = NA, width=0.5, fill = NA, col = 'gray30', lwd = 0.8) +
-  theme_bw() +
+  #theme_bw() +
+  theme_pubclean() +
   ylab(expression(bold(paste("Car Density (No. cars/km" ^ "2", ")")))) +
-  xlab('Image resolution (m)') +
-  geom_text(data=data.frame(), aes(label = '(a)', x = -Inf, y = Inf),
+  xlab('Presence of snow') +
+  geom_text(data=data.frame(), aes(label = '(b)', x = -Inf, y = Inf),
             hjust = 0, vjust = 1, fontface = 'bold', size = 5) +
   #stat_summary(fun=mean, geom="point", shape=17, size=3, col = 'black') +
   theme(axis.title.y  = element_text(size = 13, face = 'bold', margin = unit(c(0, 3, 0, 0), "mm")), 
@@ -198,7 +201,8 @@ snow <- cars %>%
 nadir <- cars %>%
   ggplot(aes(x=offNadirAngle, y = Dcars)) +
   geom_point(col = 'cyan4', alpha = 0.5, size = 3) +
-  theme_bw() +
+ # theme_bw() +
+  theme_pubclean() +
   ylab(expression(bold(paste("Car Density (No. cars/km" ^ "2", ")")))) +
   xlab('Off-Nadir (°)') +
   #stat_summary(fun=mean, geom="point", shape=17, size=3, col = 'black') +
@@ -219,7 +223,8 @@ nadir <- cars %>%
 sun <- cars %>%
   ggplot(aes(x=sunElevation, y = Dcars)) +
   geom_point(col = 'cyan4', alpha = 0.5, size = 3) +
-  theme_bw() +
+ # theme_bw() +
+  theme_pubclean() +
   ylab(expression(bold(paste("Car Density (No. cars/km" ^ "2", ")")))) +
   xlab('Sun elevation (°)') +
   #stat_summary(fun=mean, geom="point", shape=17, size=3, col = 'black') +
@@ -242,7 +247,8 @@ cloud <- cars %>%
   filter(cloudCover < 0.48) %>%
   ggplot(aes(x=cloudCover, y = Dcars)) +
   geom_point(col = 'cyan4', alpha = 0.5, size = 3) +
-  theme_bw() +
+  #theme_bw() +
+  theme_pubclean() +
   ylab(expression(bold(paste("Car Density (No. cars/km" ^ "2", ")")))) +
   xlab('Cloud coverage (%)') +
   geom_text(data=data.frame(), aes(label = '(e)', x = -Inf, y = Inf),
@@ -263,9 +269,13 @@ cloud <- cars %>%
 allp <- ggarrange(res, snow, nadir, sun, cloud,
                   nrow = 2, ncol = 3)
 
-ggsave('~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/Manuscript/Figures/Exploratory/covariates.jpg',
+ggsave('~/Downloads/covariates2.jpg',
        dpi = 300, width = 30, height = 20, unit='cm',
        bg = 'white')
+
+# ggsave('~/OneDrive - Hamad bin Khalifa University/Projects/Ukraine/Manuscript/Figures/Exploratory/covariates.jpg',
+#        dpi = 300, width = 30, height = 20, unit='cm',
+#        bg = 'white')
 
 
 
